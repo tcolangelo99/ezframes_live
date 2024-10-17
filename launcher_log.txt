@@ -1,0 +1,304 @@
+2024-08-29 19:15:40,057 - INFO - Application path: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie
+2024-08-29 19:15:40,057 - INFO - Checking workspace at: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie\workspace
+2024-08-29 19:15:40,075 - INFO - Workspace size: 5.64 GB
+2024-08-29 19:15:41,183 - DEBUG - Starting new HTTPS connection (1): raw.githubusercontent.com:443
+2024-08-29 19:15:41,351 - DEBUG - https://raw.githubusercontent.com:443 "GET /tcolangelo99/ezframes/main/version.txt HTTP/11" 200 24
+2024-08-29 19:15:41,351 - INFO - Local version: 2.0, Remote version: 2.0
+2024-08-29 19:15:41,351 - INFO - Current version: 2.0
+2024-08-29 19:15:41,351 - INFO - Latest version: 2.0
+2024-08-29 19:15:41,351 - INFO - Needs update: False
+2024-08-29 19:15:41,351 - INFO - No update needed
+2024-08-29 19:15:43,350 - INFO - Launching application: ezcutie.exe
+2024-08-29 19:15:43,350 - INFO - Created mutex for main application
+2024-08-29 19:15:43,353 - INFO - Application launched successfully.
+2024-08-29 19:16:12,512 - INFO - Main application finished with exit code: 62097
+2024-08-29 19:20:39,174 - INFO - Application path: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie
+2024-08-29 19:20:39,174 - INFO - Checking workspace at: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie\workspace
+2024-08-29 19:20:39,221 - DEBUG - Starting new HTTPS connection (1): raw.githubusercontent.com:443
+2024-08-29 19:20:39,239 - INFO - Workspace size: 5.64 GB
+2024-08-29 19:20:39,251 - DEBUG - https://raw.githubusercontent.com:443 "GET /tcolangelo99/ezframes/main/version.txt HTTP/11" 200 24
+2024-08-29 19:20:39,251 - INFO - Local version: 2.0, Remote version: 2.0
+2024-08-29 19:20:39,252 - INFO - Current version: 2.0
+2024-08-29 19:20:39,252 - INFO - Latest version: 2.0
+2024-08-29 19:20:39,252 - INFO - Needs update: False
+2024-08-29 19:20:39,252 - INFO - No update needed
+2024-08-29 19:20:41,240 - INFO - Launching application: ezcutie.exe
+2024-08-29 19:20:41,240 - INFO - Created mutex for main application
+2024-08-29 19:20:41,244 - INFO - Application launched successfully.
+2024-08-29 19:20:52,259 - INFO - Application path: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie
+2024-08-29 19:20:52,259 - INFO - Checking workspace at: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie\workspace
+2024-08-29 19:20:52,302 - DEBUG - Starting new HTTPS connection (1): raw.githubusercontent.com:443
+2024-08-29 19:20:52,320 - INFO - Workspace size: 5.64 GB
+2024-08-29 19:20:52,484 - DEBUG - https://raw.githubusercontent.com:443 "GET /tcolangelo99/ezframes/main/version.txt HTTP/11" 200 24
+2024-08-29 19:20:52,484 - INFO - Local version: 2.0, Remote version: 2.0
+2024-08-29 19:20:52,484 - INFO - Current version: 2.0
+2024-08-29 19:20:52,484 - INFO - Latest version: 2.0
+2024-08-29 19:20:52,484 - INFO - Needs update: False
+2024-08-29 19:20:52,484 - INFO - No update needed
+2024-08-29 19:20:54,474 - INFO - Launching application: ezcutie.exe
+2024-08-29 19:20:54,474 - INFO - Created mutex for main application
+2024-08-29 19:20:54,477 - INFO - Application launched successfully.
+2024-08-29 19:20:57,345 - INFO - Main application finished with exit code: 62097
+2024-08-29 19:26:42,875 - INFO - Application path: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie
+2024-08-29 19:26:42,875 - INFO - Checking workspace at: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie\workspace
+2024-08-29 19:26:42,920 - DEBUG - Starting new HTTPS connection (1): raw.githubusercontent.com:443
+2024-08-29 19:26:42,939 - INFO - Workspace size: 5.64 GB
+2024-08-29 19:26:43,087 - DEBUG - https://raw.githubusercontent.com:443 "GET /tcolangelo99/ezframes/main/version.txt HTTP/11" 200 24
+2024-08-29 19:26:43,087 - INFO - Local version: 2.0, Remote version: 2.0
+2024-08-29 19:26:43,087 - INFO - Current version: 2.0
+2024-08-29 19:26:43,087 - INFO - Latest version: 2.0
+2024-08-29 19:26:43,087 - INFO - Needs update: False
+2024-08-29 19:26:43,087 - INFO - No update needed
+2024-08-29 19:26:45,083 - INFO - Launching application: ezcutie.exe
+2024-08-29 19:26:45,083 - INFO - Created mutex for main application
+2024-08-29 19:26:45,087 - INFO - Application launched successfully.
+2024-08-29 19:26:51,785 - INFO - Workspace folder purged successfully.
+2024-08-29 19:26:52,879 - INFO - Main application finished with exit code: 62097
+2024-08-29 19:27:04,357 - INFO - Application path: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie
+2024-08-29 19:27:04,357 - INFO - Checking workspace at: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie\workspace
+2024-08-29 19:27:04,402 - INFO - Workspace size: 0.00 GB
+2024-08-29 19:27:04,403 - DEBUG - Starting new HTTPS connection (1): raw.githubusercontent.com:443
+2024-08-29 19:27:04,428 - DEBUG - https://raw.githubusercontent.com:443 "GET /tcolangelo99/ezframes/main/version.txt HTTP/11" 200 24
+2024-08-29 19:27:04,428 - INFO - Local version: 2.0, Remote version: 2.0
+2024-08-29 19:27:04,428 - INFO - Current version: 2.0
+2024-08-29 19:27:04,428 - INFO - Latest version: 2.0
+2024-08-29 19:27:04,428 - INFO - Needs update: False
+2024-08-29 19:27:04,428 - INFO - No update needed
+2024-08-29 19:27:06,428 - INFO - Launching application: ezcutie.exe
+2024-08-29 19:27:06,428 - INFO - Created mutex for main application
+2024-08-29 19:27:06,431 - INFO - Application launched successfully.
+2024-08-29 19:27:10,059 - INFO - Main application finished with exit code: 0
+2024-08-29 19:27:27,333 - INFO - Application path: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie
+2024-08-29 19:27:27,333 - INFO - Checking workspace at: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie\workspace
+2024-08-29 19:27:27,384 - INFO - Workspace size: 5.44 GB
+2024-08-29 19:27:27,385 - DEBUG - Starting new HTTPS connection (1): raw.githubusercontent.com:443
+2024-08-29 19:27:27,413 - DEBUG - https://raw.githubusercontent.com:443 "GET /tcolangelo99/ezframes/main/version.txt HTTP/11" 200 24
+2024-08-29 19:27:27,413 - INFO - Local version: 2.0, Remote version: 2.0
+2024-08-29 19:27:27,413 - INFO - Current version: 2.0
+2024-08-29 19:27:27,413 - INFO - Latest version: 2.0
+2024-08-29 19:27:27,413 - INFO - Needs update: False
+2024-08-29 19:27:27,413 - INFO - No update needed
+2024-08-29 19:27:29,189 - INFO - Workspace folder purged successfully.
+2024-08-29 19:27:29,412 - INFO - Launching application: ezcutie.exe
+2024-08-29 19:27:29,412 - INFO - Created mutex for main application
+2024-08-29 19:27:29,418 - INFO - Application launched successfully.
+2024-08-29 19:27:30,107 - INFO - Main application finished with exit code: 62097
+2024-08-29 19:27:45,237 - INFO - Application path: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie
+2024-08-29 19:27:45,237 - INFO - Checking workspace at: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie\workspace
+2024-08-29 19:27:45,237 - INFO - Workspace size: 5.44 GB
+2024-08-29 19:27:45,286 - DEBUG - Starting new HTTPS connection (1): raw.githubusercontent.com:443
+2024-08-29 19:27:45,308 - DEBUG - https://raw.githubusercontent.com:443 "GET /tcolangelo99/ezframes/main/version.txt HTTP/11" 200 24
+2024-08-29 19:27:45,308 - INFO - Local version: 2.0, Remote version: 2.0
+2024-08-29 19:27:45,309 - INFO - Current version: 2.0
+2024-08-29 19:27:45,309 - INFO - Latest version: 2.0
+2024-08-29 19:27:45,309 - INFO - Needs update: False
+2024-08-29 19:27:45,309 - INFO - No update needed
+2024-08-29 19:27:47,302 - INFO - Launching application: ezcutie.exe
+2024-08-29 19:27:47,302 - INFO - Created mutex for main application
+2024-08-29 19:27:47,305 - INFO - Application launched successfully.
+2024-08-29 19:27:47,684 - INFO - Main application finished with exit code: 62097
+2024-08-29 19:27:53,731 - INFO - Application path: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie
+2024-08-29 19:27:53,731 - INFO - Checking workspace at: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie\workspace
+2024-08-29 19:27:53,780 - INFO - Workspace size: 5.44 GB
+2024-08-29 19:27:53,781 - DEBUG - Starting new HTTPS connection (1): raw.githubusercontent.com:443
+2024-08-29 19:27:53,805 - DEBUG - https://raw.githubusercontent.com:443 "GET /tcolangelo99/ezframes/main/version.txt HTTP/11" 200 24
+2024-08-29 19:27:53,805 - INFO - Local version: 2.0, Remote version: 2.0
+2024-08-29 19:27:53,805 - INFO - Current version: 2.0
+2024-08-29 19:27:53,805 - INFO - Latest version: 2.0
+2024-08-29 19:27:53,805 - INFO - Needs update: False
+2024-08-29 19:27:53,805 - INFO - No update needed
+2024-08-29 19:27:55,802 - INFO - Launching application: ezcutie.exe
+2024-08-29 19:27:55,802 - INFO - Created mutex for main application
+2024-08-29 19:27:55,805 - INFO - Application launched successfully.
+2024-08-29 19:27:59,844 - INFO - Main application finished with exit code: 0
+2024-08-29 19:31:09,551 - INFO - Application path: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie
+2024-08-29 19:31:09,551 - INFO - Checking workspace at: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie\workspace
+2024-08-29 19:31:09,597 - INFO - Workspace size: 5.44 GB
+2024-08-29 19:31:09,597 - DEBUG - Starting new HTTPS connection (1): raw.githubusercontent.com:443
+2024-08-29 19:31:09,622 - DEBUG - https://raw.githubusercontent.com:443 "GET /tcolangelo99/ezframes/main/version.txt HTTP/11" 200 24
+2024-08-29 19:31:09,622 - INFO - Local version: 2.0, Remote version: 2.0
+2024-08-29 19:31:09,622 - INFO - Current version: 2.0
+2024-08-29 19:31:09,622 - INFO - Latest version: 2.0
+2024-08-29 19:31:09,622 - INFO - Needs update: False
+2024-08-29 19:31:09,622 - INFO - No update needed
+2024-08-29 19:31:23,127 - INFO - Launching application: ezcutie.exe
+2024-08-29 19:31:23,127 - INFO - Created mutex for main application
+2024-08-29 19:31:23,131 - INFO - Application launched successfully.
+2024-08-29 19:31:27,574 - INFO - Main application finished with exit code: 0
+2024-08-29 19:31:30,844 - INFO - Application path: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie
+2024-08-29 19:31:30,844 - INFO - Checking workspace at: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie\workspace
+2024-08-29 19:31:30,886 - INFO - Workspace size: 5.44 GB
+2024-08-29 19:31:30,887 - DEBUG - Starting new HTTPS connection (1): raw.githubusercontent.com:443
+2024-08-29 19:31:30,912 - DEBUG - https://raw.githubusercontent.com:443 "GET /tcolangelo99/ezframes/main/version.txt HTTP/11" 200 24
+2024-08-29 19:31:30,913 - INFO - Local version: 2.0, Remote version: 2.0
+2024-08-29 19:31:30,913 - INFO - Current version: 2.0
+2024-08-29 19:31:30,913 - INFO - Latest version: 2.0
+2024-08-29 19:31:30,913 - INFO - Needs update: False
+2024-08-29 19:31:30,913 - INFO - No update needed
+2024-08-29 19:31:36,883 - INFO - Workspace folder purged successfully.
+2024-08-29 19:31:37,755 - INFO - Launching application: ezcutie.exe
+2024-08-29 19:31:37,755 - INFO - Created mutex for main application
+2024-08-29 19:31:37,759 - INFO - Application launched successfully.
+2024-08-29 19:31:41,864 - INFO - Main application finished with exit code: 0
+2024-08-29 19:32:21,462 - INFO - Application path: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie
+2024-08-29 19:32:21,462 - INFO - Checking workspace at: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie\workspace
+2024-08-29 19:32:21,521 - INFO - Workspace size: 4.32 GB
+2024-08-29 19:32:21,522 - DEBUG - Starting new HTTPS connection (1): raw.githubusercontent.com:443
+2024-08-29 19:32:21,694 - DEBUG - https://raw.githubusercontent.com:443 "GET /tcolangelo99/ezframes/main/version.txt HTTP/11" 200 24
+2024-08-29 19:32:21,694 - INFO - Local version: 1.4, Remote version: 2.0
+2024-08-29 19:32:21,694 - INFO - Current version: 1.4
+2024-08-29 19:32:21,694 - INFO - Latest version: 2.0
+2024-08-29 19:32:21,694 - INFO - Needs update: True
+2024-08-29 19:32:21,704 - DEBUG - Using proactor: IocpProactor
+2024-08-29 19:32:21,704 - INFO - Checking installer URL: https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer.exe
+2024-08-29 19:32:22,183 - INFO - Installer found: https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer.exe
+2024-08-29 19:32:22,183 - INFO - Checking bin file URL: https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer-1.bin
+2024-08-29 19:32:23,028 - INFO - Bin file found: https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer-1.bin
+2024-08-29 19:32:23,028 - INFO - Checking bin file URL: https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer-2.bin
+2024-08-29 19:32:23,844 - INFO - Bin file found: https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer-2.bin
+2024-08-29 19:32:23,844 - INFO - Checking bin file URL: https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer-3.bin
+2024-08-29 19:32:24,739 - INFO - Bin file found: https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer-3.bin
+2024-08-29 19:32:24,739 - INFO - Checking bin file URL: https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer-4.bin
+2024-08-29 19:32:24,941 - INFO - No more bin files found. Stopped at 3
+2024-08-29 19:32:25,521 - INFO - Successfully downloaded: https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer.exe
+2024-08-29 19:32:26,254 - INFO - Workspace folder purged successfully.
+2024-08-29 19:32:30,973 - ERROR - Error downloading https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer-1.bin: wrapped C/C++ object of type UpdateWorker has been deleted
+2024-08-29 19:32:30,976 - ERROR - Error downloading https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer-3.bin: wrapped C/C++ object of type UpdateWorker has been deleted
+2024-08-29 19:32:31,069 - ERROR - Error downloading https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer-2.bin: wrapped C/C++ object of type UpdateWorker has been deleted
+2024-08-29 19:32:31,069 - ERROR - Some files failed to download.
+2024-08-29 20:30:36,881 - INFO - Application path: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie
+2024-08-29 20:30:36,881 - INFO - Checking workspace at: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie\workspace
+2024-08-29 20:30:36,924 - INFO - Workspace size: 0.00 GB
+2024-08-29 20:30:36,925 - DEBUG - Starting new HTTPS connection (1): raw.githubusercontent.com:443
+2024-08-29 20:30:36,950 - DEBUG - https://raw.githubusercontent.com:443 "GET /tcolangelo99/ezframes/main/version.txt HTTP/11" 200 24
+2024-08-29 20:30:36,950 - INFO - Local version: 2.0, Remote version: 2.0
+2024-08-29 20:30:36,950 - INFO - Current version: 2.0
+2024-08-29 20:30:36,950 - INFO - Latest version: 2.0
+2024-08-29 20:30:36,950 - INFO - Needs update: False
+2024-08-29 20:30:36,950 - INFO - No update needed
+2024-08-29 20:30:36,964 - INFO - Launching application: ezcutie.exe
+2024-08-29 20:30:36,964 - INFO - Created mutex for main application
+2024-08-29 20:30:36,969 - INFO - Application launched successfully.
+2024-08-29 20:30:44,621 - INFO - Main application finished with exit code: 0
+2024-08-29 20:31:24,644 - INFO - Application path: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie
+2024-08-29 20:31:24,644 - INFO - Checking workspace at: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie\workspace
+2024-08-29 20:31:24,693 - INFO - Workspace size: 5.44 GB
+2024-08-29 20:31:24,694 - DEBUG - Starting new HTTPS connection (1): raw.githubusercontent.com:443
+2024-08-29 20:31:24,713 - DEBUG - https://raw.githubusercontent.com:443 "GET /tcolangelo99/ezframes/main/version.txt HTTP/11" 200 24
+2024-08-29 20:31:24,713 - INFO - Local version: 2.0, Remote version: 2.0
+2024-08-29 20:31:24,713 - INFO - Current version: 2.0
+2024-08-29 20:31:24,713 - INFO - Latest version: 2.0
+2024-08-29 20:31:24,713 - INFO - Needs update: False
+2024-08-29 20:31:24,713 - INFO - No update needed
+2024-08-29 20:31:27,365 - INFO - Launching application: ezcutie.exe
+2024-08-29 20:31:27,365 - INFO - Created mutex for main application
+2024-08-29 20:31:27,369 - INFO - Application launched successfully.
+2024-08-29 20:31:30,951 - INFO - Main application finished with exit code: 0
+2024-08-29 23:21:56,559 - INFO - Application path: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie
+2024-08-29 23:21:56,601 - INFO - Checking workspace at: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie\workspace
+2024-08-29 23:21:56,601 - INFO - Workspace size: 0.00 GB
+2024-08-29 23:21:56,602 - DEBUG - Starting new HTTPS connection (1): raw.githubusercontent.com:443
+2024-08-29 23:21:56,626 - DEBUG - https://raw.githubusercontent.com:443 "GET /tcolangelo99/ezframes/main/version.txt HTTP/11" 200 24
+2024-08-29 23:21:56,626 - INFO - Local version: 2.0, Remote version: 2.0
+2024-08-29 23:21:56,626 - INFO - Current version: 2.0
+2024-08-29 23:21:56,626 - INFO - Latest version: 2.0
+2024-08-29 23:21:56,626 - INFO - Needs update: False
+2024-08-29 23:21:56,626 - INFO - No update needed
+2024-08-29 23:21:56,644 - INFO - Launching application: ezcutie.exe
+2024-08-29 23:21:56,644 - INFO - Created mutex for main application
+2024-08-29 23:21:56,666 - INFO - Application launched successfully.
+2024-08-29 23:22:04,925 - INFO - Application path: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie
+2024-08-29 23:22:04,925 - INFO - Checking workspace at: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie\workspace
+2024-08-29 23:22:04,965 - INFO - Workspace size: 0.00 GB
+2024-08-29 23:22:04,966 - DEBUG - Starting new HTTPS connection (1): raw.githubusercontent.com:443
+2024-08-29 23:22:04,987 - DEBUG - https://raw.githubusercontent.com:443 "GET /tcolangelo99/ezframes/main/version.txt HTTP/11" 200 24
+2024-08-29 23:22:04,988 - INFO - Local version: 2.0, Remote version: 2.0
+2024-08-29 23:22:04,988 - INFO - Current version: 2.0
+2024-08-29 23:22:04,988 - INFO - Latest version: 2.0
+2024-08-29 23:22:04,988 - INFO - Needs update: False
+2024-08-29 23:22:04,988 - INFO - No update needed
+2024-08-29 23:22:04,999 - INFO - Launching application: ezcutie.exe
+2024-08-29 23:22:04,999 - INFO - Created mutex for main application
+2024-08-29 23:22:05,002 - INFO - Application launched successfully.
+2024-08-29 23:22:09,487 - INFO - Main application finished with exit code: 0
+2024-08-29 23:22:11,526 - INFO - Main application finished with exit code: 0
+2024-08-29 23:22:24,072 - INFO - Application path: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie
+2024-08-29 23:22:24,072 - INFO - Checking workspace at: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie\workspace
+2024-08-29 23:22:24,112 - INFO - Workspace size: 0.00 GB
+2024-08-29 23:22:24,113 - DEBUG - Starting new HTTPS connection (1): raw.githubusercontent.com:443
+2024-08-29 23:22:24,137 - DEBUG - https://raw.githubusercontent.com:443 "GET /tcolangelo99/ezframes/main/version.txt HTTP/11" 200 24
+2024-08-29 23:22:24,137 - INFO - Local version: 2.0, Remote version: 2.0
+2024-08-29 23:22:24,137 - INFO - Current version: 2.0
+2024-08-29 23:22:24,137 - INFO - Latest version: 2.0
+2024-08-29 23:22:24,137 - INFO - Needs update: False
+2024-08-29 23:22:24,137 - INFO - No update needed
+2024-08-29 23:22:27,068 - INFO - Launching application: ezcutie.exe
+2024-08-29 23:22:27,068 - INFO - Created mutex for main application
+2024-08-29 23:22:27,071 - INFO - Application launched successfully.
+2024-08-29 23:22:32,291 - INFO - Main application finished with exit code: 0
+2024-08-29 23:22:59,384 - INFO - Application path: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie
+2024-08-29 23:22:59,384 - INFO - Checking workspace at: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie\workspace
+2024-08-29 23:22:59,425 - INFO - Workspace size: 5.44 GB
+2024-08-29 23:22:59,426 - DEBUG - Starting new HTTPS connection (1): raw.githubusercontent.com:443
+2024-08-29 23:22:59,457 - DEBUG - https://raw.githubusercontent.com:443 "GET /tcolangelo99/ezframes/main/version.txt HTTP/11" 200 24
+2024-08-29 23:22:59,457 - INFO - Local version: 2.0, Remote version: 2.0
+2024-08-29 23:22:59,457 - INFO - Current version: 2.0
+2024-08-29 23:22:59,457 - INFO - Latest version: 2.0
+2024-08-29 23:22:59,457 - INFO - Needs update: False
+2024-08-29 23:22:59,457 - INFO - No update needed
+2024-08-29 23:23:07,246 - INFO - Workspace folder purged successfully.
+2024-08-29 23:23:08,458 - INFO - Launching application: ezcutie.exe
+2024-08-29 23:23:08,458 - INFO - Created mutex for main application
+2024-08-29 23:23:08,461 - INFO - Application launched successfully.
+2024-08-29 23:23:12,059 - INFO - Main application finished with exit code: 0
+2024-08-29 23:23:21,342 - INFO - Application path: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie
+2024-08-29 23:23:21,342 - INFO - Checking workspace at: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie\workspace
+2024-08-29 23:23:21,390 - INFO - Workspace size: 0.00 GB
+2024-08-29 23:23:21,391 - DEBUG - Starting new HTTPS connection (1): raw.githubusercontent.com:443
+2024-08-29 23:23:21,415 - DEBUG - https://raw.githubusercontent.com:443 "GET /tcolangelo99/ezframes/main/version.txt HTTP/11" 200 24
+2024-08-29 23:23:21,415 - INFO - Local version: 1.4, Remote version: 2.0
+2024-08-29 23:23:21,415 - INFO - Current version: 1.4
+2024-08-29 23:23:21,415 - INFO - Latest version: 2.0
+2024-08-29 23:23:21,415 - INFO - Needs update: True
+2024-08-29 23:23:21,431 - DEBUG - Using proactor: IocpProactor
+2024-08-29 23:23:21,431 - INFO - Checking installer URL: https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer.exe
+2024-08-29 23:23:22,207 - INFO - Installer found: https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer.exe
+2024-08-29 23:23:22,207 - INFO - Checking bin file URL: https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer-1.bin
+2024-08-29 23:23:22,985 - INFO - Bin file found: https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer-1.bin
+2024-08-29 23:23:22,985 - INFO - Checking bin file URL: https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer-2.bin
+2024-08-29 23:23:23,725 - INFO - Bin file found: https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer-2.bin
+2024-08-29 23:23:23,725 - INFO - Checking bin file URL: https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer-3.bin
+2024-08-29 23:23:23,925 - INFO - No more bin files found. Stopped at 2
+2024-08-29 23:23:24,147 - INFO - Successfully downloaded: https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer.exe
+2024-08-29 23:27:23,537 - INFO - Successfully downloaded: https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer-1.bin
+2024-08-29 23:29:21,419 - INFO - Successfully downloaded: https://github.com/tcolangelo99/ezframes/releases/download/v2.0/ezframes_v2.0_installer-2.bin
+2024-08-29 23:29:21,419 - INFO - Total files downloaded: 3
+2024-08-29 23:29:21,419 - INFO - Total download size: 3814.70 MB
+2024-10-17 19:12:40,088 - INFO - Application path: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie
+2024-10-17 19:12:40,138 - INFO - Checking workspace at: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie\workspace
+2024-10-17 19:12:40,139 - INFO - Workspace size: 0.00 GB
+2024-10-17 19:12:40,139 - DEBUG - Starting new HTTPS connection (1): raw.githubusercontent.com:443
+2024-10-17 19:12:40,322 - DEBUG - https://raw.githubusercontent.com:443 "GET /tcolangelo99/ezframes/main/version.txt HTTP/11" 200 24
+2024-10-17 19:12:40,322 - INFO - Local version: 2.0, Remote version: 2.0
+2024-10-17 19:12:40,324 - INFO - Current version: 2.0
+2024-10-17 19:12:40,324 - INFO - Latest version: 2.0
+2024-10-17 19:12:40,324 - INFO - Needs update: False
+2024-10-17 19:12:40,324 - INFO - No update needed
+2024-10-17 19:12:43,089 - INFO - Launching application: ezcutie.exe
+2024-10-17 19:12:43,089 - INFO - Created mutex for main application
+2024-10-17 19:12:43,111 - INFO - Application launched successfully.
+2024-10-17 19:12:59,170 - INFO - Main application finished with exit code: 0
+2024-10-17 20:10:36,683 - INFO - Application path: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie
+2024-10-17 20:10:36,683 - INFO - Checking workspace at: G:\AFTER EFFECTS\ezframes2.0\dist\ezcutie\workspace
+2024-10-17 20:10:36,729 - INFO - Workspace size: 0.00 GB
+2024-10-17 20:10:36,729 - DEBUG - Starting new HTTPS connection (1): raw.githubusercontent.com:443
+2024-10-17 20:10:36,938 - DEBUG - https://raw.githubusercontent.com:443 "GET /tcolangelo99/ezframes/main/version.txt HTTP/11" 200 24
+2024-10-17 20:10:36,939 - INFO - Local version: 2.0, Remote version: 2.0
+2024-10-17 20:10:36,939 - INFO - Current version: 2.0
+2024-10-17 20:10:36,939 - INFO - Latest version: 2.0
+2024-10-17 20:10:36,939 - INFO - Needs update: False
+2024-10-17 20:10:36,939 - INFO - No update needed
+2024-10-17 20:10:39,682 - INFO - Launching application: ezcutie.exe
+2024-10-17 20:10:39,682 - INFO - Created mutex for main application
+2024-10-17 20:10:39,684 - INFO - Application launched successfully.
+2024-10-17 20:12:34,540 - INFO - Main application finished with exit code: 0
