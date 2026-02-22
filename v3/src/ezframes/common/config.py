@@ -110,7 +110,7 @@ class RuntimeConfig:
         return cls(
             manifest_url=os.environ.get(
                 "EZFRAMES_MANIFEST_URL",
-                "https://github.com/tcolangelo99/ezframes/releases/latest/download/manifest.v1.json",
+                "https://github.com/tcolangelo99/ezframes_live/releases/latest/download/manifest.v1.json",
             ),
             update_timeout_seconds=int(os.environ.get("EZFRAMES_UPDATE_TIMEOUT", "30")),
             download_chunk_size=int(os.environ.get("EZFRAMES_DOWNLOAD_CHUNK", str(1024 * 1024))),
