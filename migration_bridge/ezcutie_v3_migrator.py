@@ -25,6 +25,8 @@ DOWNLOAD_TIMEOUT_SECONDS = 60
 INSTALL_TIMEOUT_SECONDS = 60 * 30
 DOWNLOAD_CHUNK_SIZE = 1024 * 1024
 UI_UPDATE_MIN_INTERVAL_SECONDS = 0.15
+LAUNCH_WAIT_TIMEOUT_SECONDS = 180
+LAUNCH_UI_UPDATE_INTERVAL_SECONDS = 0.5
 
 
 def _local_app_data() -> Path:
@@ -132,7 +134,20 @@ class MigrationProgressWindow:
                     detail = str(payload[2]) if len(payload) > 2 else ""
                     status_var.set(status)
                     detail_var.set(detail)
+                    if str(progress.cget("mode")) != "determinate":
+                        progress.stop()
+                        progress.configure(mode="determinate")
                     progress_var.set(max(0.0, min(100.0, percent)))
+                    return True
+                if event_name == "mode":
+                    mode = str(payload[0]) if payload else "determinate"
+                    if mode not in ("determinate", "indeterminate"):
+                        mode = "determinate"
+                    if str(progress.cget("mode")) != mode:
+                        progress.stop()
+                        progress.configure(mode=mode)
+                    if mode == "indeterminate":
+                        progress.start(40)
                     return True
                 return True
 
@@ -167,6 +182,9 @@ class MigrationProgressWindow:
     def set_progress(self, status: str, percent: float, detail: str = "") -> None:
         self._emit("progress", status, percent, detail)
 
+    def set_mode(self, mode: str) -> None:
+        self._emit("mode", mode)
+
     def close(self) -> None:
         self._emit("close")
 
@@ -180,15 +198,39 @@ def find_v3_launcher() -> tuple[Path, Path] | None:
     return None
 
 
-def launch_v3() -> bool:
+def launch_v3(progress_ui: MigrationProgressWindow | None = None) -> bool:
     found = find_v3_launcher()
     if not found:
         return False
     pythonw, bootstrap = found
-    cmd = [str(pythonw), str(bootstrap)]
+    cmd = [str(pythonw), str(bootstrap), "--skip-update", "--log-level", "INFO"]
     logging.info("Launching v3 runtime: %s", cmd)
-    subprocess.Popen(cmd, cwd=str(_install_root()), shell=False)
-    return True
+    proc = subprocess.Popen(cmd, cwd=str(_install_root()), shell=False)
+
+    if progress_ui is not None:
+        progress_ui.set_mode("indeterminate")
+        progress_ui.set_status("Starting EzFrames v3...", "Opening launcher and loading runtime.")
+
+    start = time.time()
+    next_ui_update = 0.0
+    while True:
+        rc = proc.poll()
+        elapsed = time.time() - start
+        if rc is not None:
+            if rc == 0:
+                return True
+            logging.error("v3 launcher exited with code %s", rc)
+            return False
+
+        if elapsed > LAUNCH_WAIT_TIMEOUT_SECONDS:
+            logging.warning("v3 launcher still running after %ss; assuming handoff is in progress.", LAUNCH_WAIT_TIMEOUT_SECONDS)
+            return True
+
+        if progress_ui is not None and elapsed >= next_ui_update:
+            detail = f"Waiting for launcher handoff... {int(elapsed)}s"
+            progress_ui.set_status("Starting EzFrames v3...", detail)
+            next_ui_update = elapsed + LAUNCH_UI_UPDATE_INTERVAL_SECONDS
+        time.sleep(0.2)
 
 
 def github_latest_release(repo: str) -> dict:
@@ -280,7 +322,7 @@ def download_asset(
             time.sleep(1.5 * attempt)
 
 
-def run_installer(installer_path: Path) -> int:
+def run_installer(installer_path: Path, progress_ui: MigrationProgressWindow | None = None) -> int:
     cmd = [
         str(installer_path),
         "/VERYSILENT",
@@ -291,19 +333,50 @@ def run_installer(installer_path: Path) -> int:
     logging.info("Running installer: %s", cmd)
     proc = subprocess.Popen(cmd, cwd=str(installer_path.parent), shell=False)
     start = time.time()
+    phase_messages = [
+        "Unpacking installer payload...",
+        "Installing managed Python runtime...",
+        "Installing dependencies and model files...",
+        "Finalizing installation files...",
+    ]
+    if progress_ui is not None:
+        progress_ui.set_mode("indeterminate")
+        progress_ui.set_status("Installing EzFrames v3...", phase_messages[0])
     while proc.poll() is None:
         if time.time() - start > INSTALL_TIMEOUT_SECONDS:
             proc.kill()
             raise TimeoutError("Installer timed out.")
+        if progress_ui is not None:
+            elapsed = time.time() - start
+            if elapsed < 25:
+                phase = phase_messages[0]
+            elif elapsed < 70:
+                phase = phase_messages[1]
+            elif elapsed < 140:
+                phase = phase_messages[2]
+            else:
+                phase = phase_messages[3]
+            progress_ui.set_status("Installing EzFrames v3...", phase)
         time.sleep(0.5)
     return int(proc.returncode or 0)
 
 
-def wait_for_v3_install(timeout_seconds: int = 45) -> bool:
+def wait_for_v3_install(
+    timeout_seconds: int = 45,
+    progress_ui: MigrationProgressWindow | None = None,
+) -> bool:
     end = time.time() + timeout_seconds
+    started = time.time()
+    last_ui_update = 0.0
     while time.time() < end:
         if find_v3_launcher() is not None:
             return True
+        if progress_ui is not None:
+            now = time.time()
+            if now - last_ui_update >= 0.5:
+                elapsed = int(now - started)
+                progress_ui.set_status("Finalizing installation...", f"Verifying installed files... {elapsed}s")
+                last_ui_update = now
         time.sleep(1.0)
     return False
 
@@ -325,14 +398,23 @@ def launch_legacy_fallback(exe_dir: Path) -> int:
 
 
 def migrate_to_v3(exe_dir: Path) -> int:
-    if launch_v3():
-        logging.info("v3 already installed; launched successfully.")
-        return 0
+    progress_ui = MigrationProgressWindow()
+    progress_ui.start()
+    progress_ui.set_status("Checking EzFrames installation...", "Looking for installed v3 runtime.")
+
+    if find_v3_launcher() is not None:
+        logging.info("Existing v3 runtime detected; launching without reinstall.")
+        if launch_v3(progress_ui=progress_ui):
+            progress_ui.set_progress("EzFrames is ready", 100.0, "Opening main app...")
+            time.sleep(0.8)
+            progress_ui.close()
+            return 0
+        logging.warning("Existing v3 runtime failed to launch; attempting repair install.")
+        progress_ui.set_status("Installed runtime failed to launch", "Repairing installation from latest release.")
+        time.sleep(0.8)
 
     repo = os.environ.get("EZFRAMES_MIGRATION_REPO", DEFAULT_REPO).strip() or DEFAULT_REPO
     logging.info("Starting v2->v3 migration using repo: %s", repo)
-    progress_ui = MigrationProgressWindow()
-    progress_ui.start()
     progress_ui.set_status("Checking for EzFrames v3 update...", "Contacting GitHub Releases.")
 
     try:
@@ -350,6 +432,10 @@ def migrate_to_v3(exe_dir: Path) -> int:
             asset_name = str(asset.get("name", "asset"))
             asset_expected = max(_safe_int(asset.get("size"), 0), 0)
             asset_path = tmp_dir / asset_name
+            if asset_path.exists() and asset_path.stat().st_size == asset_expected and asset_expected > 0:
+                logging.info("Reusing cached migration asset: %s", asset_path)
+                total_downloaded += asset_expected
+                continue
             progress_ui.set_status(
                 f"Downloading update file {asset_index}/{len(assets_to_download)}",
                 f"{asset_name}",
@@ -376,21 +462,25 @@ def migrate_to_v3(exe_dir: Path) -> int:
         installer_path = tmp_dir / str(installer_asset.get("name"))
 
         progress_ui.set_status("Installing EzFrames v3...", "Applying downloaded update package.")
-        code = run_installer(installer_path)
+        code = run_installer(installer_path, progress_ui=progress_ui)
         if code not in (0, 1641, 3010):
             raise RuntimeError(f"Installer returned unexpected exit code: {code}")
-        progress_ui.set_status("Finalizing installation...", "Waiting for EzFrames runtime files.")
-        if not wait_for_v3_install():
+        progress_ui.set_status("Finalizing installation...", "Verifying runtime files.")
+        progress_ui.set_mode("indeterminate")
+        if not wait_for_v3_install(progress_ui=progress_ui):
             raise RuntimeError("v3 install did not materialize expected runtime files.")
-        if not launch_v3():
+        progress_ui.set_status("Launching EzFrames v3...", "Starting launcher with installed runtime.")
+        if not launch_v3(progress_ui=progress_ui):
             raise RuntimeError("v3 runtime files found but launch failed.")
         logging.info("Migration complete, v3 launched.")
         progress_ui.set_progress("Migration complete", 100.0, "Launching EzFrames...")
-        time.sleep(0.7)
+        time.sleep(1.0)
         progress_ui.close()
         return 0
     except Exception as exc:
         logging.exception("Migration failed: %s", exc)
+        progress_ui.set_status("Migration failed", "Starting legacy fallback...")
+        time.sleep(1.0)
         progress_ui.close()
         return launch_legacy_fallback(exe_dir)
 
