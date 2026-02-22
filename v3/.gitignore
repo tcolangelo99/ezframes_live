@@ -1,0 +1,25 @@
+# Legacy artifacts
+build/
+dist/
+venv/
+cutievenv/
+launcherenv/
+workspace/
+__pycache__/
+*.pyc
+*.pyo
+*.prof
+*.lprof
+_internal.tar
+
+# Release outputs
+release/
+runtime_bootstrap/
+runtime_python/
+*.zip
+
+# Local logs/state
+*.log
+logs/
+state/
+
