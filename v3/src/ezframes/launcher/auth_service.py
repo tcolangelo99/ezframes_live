@@ -125,7 +125,7 @@ class AuthService:
         self.cfg = cfg or AuthConfig(
             cache_ttl_days=int(os.environ.get("EZFRAMES_AUTH_CACHE_TTL_DAYS", "0")),
             launch_ticket_ttl_seconds=int(os.environ.get("EZFRAMES_LAUNCH_TICKET_TTL_SECONDS", "180")),
-            allow_free_tier=os.environ.get("EZFRAMES_ALLOW_FREE_TIER", "1").strip() not in {"0", "false", "False"},
+            allow_free_tier=True,
         )
         self.client = AuthClient(runtime, self.cfg)
         self.creds = CredentialStore()

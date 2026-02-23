@@ -36,6 +36,7 @@ def main(argv: list[str] | None = None) -> int:
     state = load_install_state(paths.state_dir)
     shortcuts = ShortcutService(paths)
     shortcuts.repair_shortcuts()
+    shortcuts.prompt_desktop_shortcut_once()
 
     migration = MigrationService(paths)
     state = migration.run_if_needed(state)
@@ -44,6 +45,7 @@ def main(argv: list[str] | None = None) -> int:
         log.info("Initialized install state version from bundled app: %s", EZFRAMES_VERSION)
     save_install_state(paths.state_dir, state)
     shortcuts.repair_shortcuts()
+    shortcuts.prompt_desktop_shortcut_once()
 
     update_service = UpdateService(paths, runtime_cfg)
     update_service.recover_interrupted_update()

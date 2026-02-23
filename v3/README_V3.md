@@ -77,7 +77,6 @@ Pro tier behavior:
 - All current app features are enabled.
 
 Operational flags:
-- `EZFRAMES_ALLOW_FREE_TIER=0` disables launcher-side "Continue Free" button.
 - App tier is passed via launcher ticket validation and exposed as `EZFRAMES_ENTITLEMENT` (`free`/`pro`) for runtime gating.
 - During mandatory updates, a topmost updater window is always shown and remains visible through relaunch handoff.
 

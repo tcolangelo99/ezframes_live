@@ -41,3 +41,6 @@ auth_cache.db-*
 *.local
 .vscode/
 .idea/
+
+# Local-only operational notes (never commit)
+docs/LOCAL_CRITICAL_OPERATIONS.md
