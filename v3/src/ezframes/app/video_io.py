@@ -19,12 +19,14 @@ def _is_usable_ffmpeg(path: Path) -> bool:
     if not path.exists():
         return False
     try:
+        creationflags = int(getattr(subprocess, "CREATE_NO_WINDOW", 0)) if os.name == "nt" else 0
         result = subprocess.run(
             [str(path), "-version"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             timeout=5,
             check=False,
+            creationflags=creationflags,
         )
         return result.returncode == 0
     except Exception:

@@ -134,14 +134,39 @@ class ProcessService:
 
     def launch_main_app(self, launch_ticket_path: Path | None = None) -> subprocess.Popen:
         python_exe = self._select_app_python()
-        # Default app mode is new/refactored UI. Set EZFRAMES_APP_MODE=legacy
-        # only as a temporary fallback path.
         cmd = [python_exe, "-m", "ezframes.app"]
         env = self._build_child_env()
-        env.setdefault("EZFRAMES_APP_MODE", "new")
         if launch_ticket_path is not None:
             env["EZFRAMES_LAUNCH_TICKET"] = str(launch_ticket_path)
         log.info("Launching main app: %s", cmd)
+        creationflags = 0
+        if os.name == "nt":
+            creationflags = int(getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        return subprocess.Popen(
+            cmd,
+            shell=False,
+            env=env,
+            cwd=str(self.paths.install_root),
+            creationflags=creationflags,
+        )
+
+    def launch_launcher(self, extra_args: list[str] | None = None) -> subprocess.Popen:
+        args = list(extra_args or [])
+        env = self._build_child_env()
+
+        native_launcher = self.paths.install_root / "EzFramesLauncher.exe"
+        bootstrap_launcher = self.paths.install_root / "bootstrap_launcher.py"
+        runtime_pythonw = self.paths.runtime_python_dir / "pythonw.exe"
+
+        if native_launcher.exists():
+            cmd = [str(native_launcher), *args]
+        elif runtime_pythonw.exists() and bootstrap_launcher.exists():
+            cmd = [str(runtime_pythonw), str(bootstrap_launcher), *args]
+        else:
+            python_exe = self._select_app_python()
+            cmd = [python_exe, "-m", "ezframes.launcher", *args]
+
+        log.info("Launching launcher process: %s", cmd)
         creationflags = 0
         if os.name == "nt":
             creationflags = int(getattr(subprocess, "CREATE_NO_WINDOW", 0))

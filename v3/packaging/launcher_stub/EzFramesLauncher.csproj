@@ -6,5 +6,6 @@
     <AssemblyName>EzFramesLauncher</AssemblyName>
     <RootNamespace>EzFramesLauncher</RootNamespace>
     <Nullable>enable</Nullable>
+    <ApplicationIcon>launcher_icon.ico</ApplicationIcon>
   </PropertyGroup>
 </Project>

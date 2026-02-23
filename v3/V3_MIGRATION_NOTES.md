@@ -12,11 +12,12 @@
 - Install state persistence (`state/install_state.v1.json`).
 - AWS auth calls retained and hardened with retries/timeouts.
 - Windows credential manager integration for minimal session marker.
+- One-time launch tickets with nonce replay protection.
 - Inno Setup thin installer template in `packaging/inno`.
 - Release scripts in `scripts/release`.
 - App launch mode:
-  - `python -m ezframes.app` defaults to the refactored v3 UI (`EZFRAMES_APP_MODE=new`).
-  - Legacy parity exists only as fallback (`EZFRAMES_APP_MODE=legacy`).
+  - `python -m ezframes.app` runs the refactored v3 UI only.
+  - Legacy mode was removed from the runtime path.
 
 ## What Was Not Touched
 
@@ -28,7 +29,6 @@
 
 ```powershell
 pip install -e .
-python -m ezframes.launcher --check-only --skip-update
-python -m ezframes.app                     # new UI mode (default)
-$env:EZFRAMES_APP_MODE='legacy'; python -m ezframes.app   # legacy fallback
+python -m ezframes.launcher --check-only
+python -m ezframes.app
 ```

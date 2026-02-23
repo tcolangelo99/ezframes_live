@@ -20,14 +20,31 @@ WizardStyle=modern
 DisableDirPage=yes
 DisableProgramGroupPage=yes
 UsePreviousAppDir=no
+SetupIconFile=..\..\runtime_bootstrap\assets\icons\launcher_icon.ico
+UninstallDisplayIcon={app}\assets\icons\ezframes_icon.ico
 
 [Files]
-; Bootstrap payload only (thin installer).
-Source: "..\..\runtime_bootstrap\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+; Bootstrap payload only (thin installer). Explicit sources avoid shipping stale workspace test artifacts.
+Source: "..\..\runtime_bootstrap\runtime\*"; DestDir: "{app}\runtime"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "..\..\runtime_bootstrap\app\*"; DestDir: "{app}\app"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "..\..\runtime_bootstrap\assets\*"; DestDir: "{app}\assets"; Flags: recursesubdirs createallsubdirs ignoreversion skipifsourcedoesntexist
+Source: "..\..\runtime_bootstrap\models\*"; DestDir: "{app}\models"; Flags: recursesubdirs createallsubdirs ignoreversion skipifsourcedoesntexist
+Source: "..\..\runtime_bootstrap\prereqs\*"; DestDir: "{app}\prereqs"; Flags: recursesubdirs createallsubdirs ignoreversion skipifsourcedoesntexist
+Source: "..\..\runtime_bootstrap\bootstrap_launcher.py"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\runtime_bootstrap\EzFramesLauncher.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\runtime_bootstrap\README.txt"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
+
+[Dirs]
+Name: "{app}\logs"
+Name: "{app}\state"
+Name: "{app}\workspace"
+
+[Tasks]
+Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription: "Additional shortcuts:"
 
 [Icons]
 Name: "{group}\EzFrames"; Filename: "{app}\EzFramesLauncher.exe"; WorkingDir: "{app}"
-Name: "{userdesktop}\EzFrames"; Filename: "{app}\EzFramesLauncher.exe"; WorkingDir: "{app}"
+Name: "{userdesktop}\EzFrames"; Filename: "{app}\EzFramesLauncher.exe"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
 ; Best-effort prerequisite install. If missing, attempt to install VC++ runtime.

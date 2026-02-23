@@ -14,6 +14,11 @@ from pathlib import Path
 
 from ezframes.common.config import AppPaths
 
+try:
+    import customtkinter as ctk
+except Exception:  # pragma: no cover - optional runtime dependency
+    ctk = None
+
 
 log = logging.getLogger(__name__)
 
@@ -140,7 +145,11 @@ def _resolve_weight_file(name: str, paths: AppPaths, cutie_root: Path, env_var: 
         [
             cutie_root / "weights" / name,
             paths.models_dir / name,
+            paths.models_dir / "weights" / name,
+            paths.models_dir / "models" / name,
             paths.install_root / "weights" / name,
+            paths.install_root / "models" / "weights" / name,
+            paths.install_root / "models" / name,
         ]
     )
 
@@ -149,6 +158,7 @@ def _resolve_weight_file(name: str, paths: AppPaths, cutie_root: Path, env_var: 
             [
                 root / "weights" / name,
                 root / "models" / name,
+                root / "models" / "weights" / name,
                 root / "Cutietop" / "weights" / name,
             ]
         )
@@ -237,6 +247,7 @@ class CutieLiteSession:
         import cv2
         import numpy as np
         import tkinter as tk
+        import tkinter.font as tkfont
         from tkinter import messagebox, ttk
         from PIL import Image, ImageTk
 
@@ -252,6 +263,7 @@ class CutieLiteSession:
         self.cv2 = cv2
         self.np = np
         self.tk = tk
+        self.tkfont = tkfont
         self.ttk = ttk
         self.messagebox = messagebox
         self.Image = Image
@@ -283,11 +295,23 @@ class CutieLiteSession:
 
         self.cfg = cfg
         self.output_mask_dir = output_mask_dir
+        self.paths = AppPaths.default()
+        self._theme_colors: dict[str, str] = {}
+        self._ctk_available = ctk is not None
+        self._ctk_progress = None
+        self._ui_mode = "ctk" if self._ctk_available else "fallback"
+        if self._ctk_available and ctk is not None:
+            try:
+                ctk.set_appearance_mode("dark")
+            except Exception:
+                pass
 
         import torch
         self.torch = torch
 
         self.root = self.tk.Tk()
+        self._configure_style()
+        self._apply_window_icon(self.root)
         self.root.title("EzFrames Cutie Lite")
         self.root.geometry("760x170")
         self.root.resizable(False, False)
@@ -358,24 +382,215 @@ class CutieLiteSession:
         self.status_var = self.tk.StringVar(value="Ready. Click to add prompts.")
         self.frame_var = self.tk.StringVar(value="")
         self.progress_var = self.tk.DoubleVar(value=0.0)
-        self.obj_var = self.tk.IntVar(value=1)
+        self.obj_var = self.tk.StringVar(value="1")
 
         self._build_ui()
+        self.status_var.set(
+            "Ready. Click to add prompts."
+            + (" (CTk UI)" if self._ctk_available else " (fallback UI)")
+        )
         self._refresh_frame()
 
-    def _build_loading_ui(self) -> None:
-        self.loading_frame = self.ttk.Frame(self.root, padding=14)
-        self.loading_frame.pack(fill=self.tk.BOTH, expand=True)
-        self.ttk.Label(self.loading_frame, text="Cutie-lite is preparing this video.").pack(anchor="w", pady=(0, 4))
-        self.ttk.Label(self.loading_frame, textvariable=self.loading_status_var).pack(anchor="w", pady=(0, 8))
-        self.loading_bar = self.ttk.Progressbar(
-            self.loading_frame,
-            variable=self.loading_progress_var,
-            mode="indeterminate",
-            maximum=max(1, self._loading_total_hint),
+    def _pick_font(self, candidates: list[str], fallback: str = "Segoe UI") -> str:
+        try:
+            available = {name.lower() for name in self.tkfont.families()}
+        except Exception:
+            available = set()
+        if not available:
+            return candidates[0] if candidates else fallback
+        for candidate in candidates:
+            if candidate.lower() in available:
+                return candidate
+        return fallback
+
+    def _icon_candidates(self) -> list[Path]:
+        candidates: list[Path] = [
+            self.paths.assets_dir / "icons" / "ezframes_icon.ico",
+            self.paths.assets_dir / "icons" / "launcher_icon.ico",
+            self.paths.install_root / "icons" / "ezframes_icon.ico",
+        ]
+        for root in self.paths.source_roots():
+            candidates.append(root / "icons" / "ezframes_icon.ico")
+            candidates.append(root / "icons" / "launcher_icon.ico")
+            candidates.append(root / "ezframes_icon.ico")
+            candidates.append(root / "launcher_icon.ico")
+        return candidates
+
+    def _apply_window_icon(self, window) -> None:
+        for candidate in self._icon_candidates():
+            try:
+                if candidate.exists():
+                    window.iconbitmap(str(candidate))
+                    return
+            except Exception:
+                continue
+
+    def _configure_style(self) -> None:
+        style = self.ttk.Style(self.root)
+        if "clam" in style.theme_names():
+            style.theme_use("clam")
+
+        body_font = self._pick_font(["Segoe UI", "Calibri", "Arial"])
+        accent_font = self._pick_font(["WWE Raw", "Segoe UI Semibold", "Segoe UI"], fallback=body_font)
+        self._theme_colors = {
+            "bg": "#1A1A1A",
+            "panel": "#242424",
+            "panel_alt": "#313131",
+            "text": "#FFFFFF",
+            "muted": "#BCC7D0",
+            "accent": "#00F0FF",
+            "primary": "#175482",
+            "primary_hover": "#2A6D9E",
+            "secondary": "#394955",
+            "secondary_hover": "#6D8B93",
+            "video_bg": "#101010",
+        }
+        c = self._theme_colors
+        self.root.configure(bg=c["bg"])
+
+        style.configure(".", background=c["bg"], foreground=c["text"], font=(body_font, 10))
+        style.configure("TFrame", background=c["bg"])
+        style.configure("TLabel", background=c["bg"], foreground=c["text"], font=(body_font, 10))
+        style.configure("Muted.TLabel", background=c["bg"], foreground=c["muted"], font=(body_font, 10))
+        style.configure("TLabelframe", background=c["panel"], bordercolor=c["panel_alt"], relief="solid", borderwidth=1)
+        style.configure("TLabelframe.Label", background=c["panel"], foreground=c["accent"], font=(accent_font, 10, "bold"))
+
+        style.configure(
+            "TButton",
+            background=c["secondary"],
+            foreground=c["text"],
+            borderwidth=0,
+            focusthickness=0,
+            padding=(10, 6),
+            font=(body_font, 11, "bold"),
         )
-        self.loading_bar.pack(fill=self.tk.X)
-        self.loading_bar.start(12)
+        style.map(
+            "TButton",
+            background=[("active", c["secondary_hover"]), ("disabled", c["panel_alt"])],
+            foreground=[("disabled", c["muted"])],
+        )
+        style.configure(
+            "Primary.TButton",
+            background=c["primary"],
+            foreground=c["text"],
+            borderwidth=0,
+            focusthickness=0,
+            padding=(12, 7),
+            font=(body_font, 11, "bold"),
+        )
+        style.map(
+            "Primary.TButton",
+            background=[("active", c["primary_hover"]), ("disabled", c["panel_alt"])],
+            foreground=[("disabled", c["muted"])],
+        )
+        style.configure(
+            "Player.TButton",
+            background=c["panel_alt"],
+            foreground=c["text"],
+            borderwidth=0,
+            focusthickness=0,
+            padding=(10, 5),
+            font=(body_font, 11, "bold"),
+        )
+        style.map(
+            "Player.TButton",
+            background=[("active", c["secondary_hover"]), ("disabled", c["panel_alt"])],
+            foreground=[("disabled", c["muted"])],
+        )
+
+        style.configure("TEntry", fieldbackground=c["panel_alt"], foreground=c["text"])
+        try:
+            style.configure("TSpinbox", fieldbackground=c["panel_alt"], foreground=c["text"], arrowsize=14)
+        except Exception:
+            style.configure("TSpinbox", fieldbackground=c["panel_alt"], foreground=c["text"])
+        style.map(
+            "TSpinbox",
+            fieldbackground=[("readonly", c["panel_alt"]), ("!disabled", c["panel_alt"])],
+            foreground=[("readonly", c["text"]), ("!disabled", c["text"])],
+        )
+        try:
+            style.configure(
+                "TProgressbar",
+                background=c["accent"],
+                darkcolor=c["accent"],
+                lightcolor=c["accent"],
+                troughcolor=c["panel_alt"],
+                bordercolor=c["panel_alt"],
+            )
+        except Exception:
+            style.configure("TProgressbar", background=c["accent"], troughcolor=c["panel_alt"])
+        self.root.option_add("*TSpinbox*Background", c["panel_alt"])
+        self.root.option_add("*TSpinbox*Foreground", c["text"])
+
+    def _build_loading_ui(self) -> None:
+        c = self._theme_colors
+        if self._ctk_available and ctk is not None:
+            self.loading_frame = ctk.CTkFrame(
+                self.root,
+                fg_color=c.get("panel", "#242424"),
+                corner_radius=16,
+            )
+            self.loading_frame.pack(fill=self.tk.BOTH, expand=True, padx=12, pady=12)
+            ctk.CTkLabel(
+                self.loading_frame,
+                text="Cutie-lite is preparing this video.",
+                text_color=c.get("text", "#FFFFFF"),
+                font=(self._pick_font(["Segoe UI", "Calibri", "Arial"]), 14, "bold"),
+            ).pack(anchor="w", pady=(0, 4), padx=10)
+            ctk.CTkLabel(
+                self.loading_frame,
+                textvariable=self.loading_status_var,
+                text_color=c.get("muted", "#BCC7D0"),
+                font=(self._pick_font(["Segoe UI", "Calibri", "Arial"]), 11),
+            ).pack(anchor="w", pady=(0, 10), padx=10)
+            self.loading_bar = ctk.CTkProgressBar(
+                self.loading_frame,
+                mode="indeterminate",
+                fg_color=c.get("panel_alt", "#313131"),
+                progress_color=c.get("accent", "#00F0FF"),
+                width=640,
+                height=16,
+                corner_radius=8,
+            )
+            self.loading_bar.pack(fill=self.tk.X, padx=10)
+            try:
+                self.loading_bar.start()
+            except Exception:
+                pass
+            self._loading_mode = "indeterminate"
+        else:
+            self.loading_frame = self.tk.Frame(
+                self.root,
+                bg=c.get("panel", "#242424"),
+                highlightbackground=c.get("panel_alt", "#313131"),
+                highlightthickness=1,
+                bd=0,
+            )
+            self.loading_frame.pack(fill=self.tk.BOTH, expand=True)
+            self.tk.Label(
+                self.loading_frame,
+                text="Cutie-lite is preparing this video.",
+                bg=c.get("panel", "#242424"),
+                fg=c.get("text", "#FFFFFF"),
+                anchor="w",
+                font=(self._pick_font(["Segoe UI", "Calibri", "Arial"]), 12, "bold"),
+            ).pack(fill=self.tk.X, padx=14, pady=(12, 4))
+            self.tk.Label(
+                self.loading_frame,
+                textvariable=self.loading_status_var,
+                bg=c.get("panel", "#242424"),
+                fg=c.get("muted", "#BCC7D0"),
+                anchor="w",
+                font=(self._pick_font(["Segoe UI", "Calibri", "Arial"]), 10),
+            ).pack(fill=self.tk.X, padx=14, pady=(0, 10))
+            self.loading_bar = self.ttk.Progressbar(
+                self.loading_frame,
+                variable=self.loading_progress_var,
+                mode="indeterminate",
+                maximum=max(1, self._loading_total_hint),
+            )
+            self.loading_bar.pack(fill=self.tk.X, padx=14, pady=(0, 12))
+            self.loading_bar.start(12)
         self._pump_loading_ui(force=True)
 
     def _pump_loading_ui(self, force: bool = False) -> None:
@@ -393,7 +608,13 @@ class CutieLiteSession:
         self.loading_status_var.set(message)
         if self.loading_bar is not None and self._loading_mode != "indeterminate":
             self.loading_bar.configure(mode="indeterminate")
-            self.loading_bar.start(12)
+            try:
+                if self._ctk_available and ctk is not None and isinstance(self.loading_bar, ctk.CTkProgressBar):
+                    self.loading_bar.start()
+                else:
+                    self.loading_bar.start(12)
+            except Exception:
+                pass
             self._loading_mode = "indeterminate"
         self._pump_loading_ui(force=True)
 
@@ -402,13 +623,20 @@ class CutieLiteSession:
         total = max(0, int(total))
         if total > 0:
             if self.loading_bar is not None and self._loading_mode != "determinate":
-                self.loading_bar.stop()
-                self.loading_bar.configure(mode="determinate", maximum=max(1, total))
+                try:
+                    self.loading_bar.stop()
+                except Exception:
+                    pass
+                self.loading_bar.configure(mode="determinate")
                 self._loading_mode = "determinate"
             if self.loading_bar is not None:
-                self.loading_bar.configure(maximum=max(1, total))
+                if self._ctk_available and ctk is not None and isinstance(self.loading_bar, ctk.CTkProgressBar):
+                    self.loading_bar.set(float(current) / float(max(1, total)))
+                else:
+                    self.loading_bar.configure(maximum=max(1, total))
             shown = min(current, total)
-            self.loading_progress_var.set(shown)
+            if not (self._ctk_available and ctk is not None and isinstance(self.loading_bar, ctk.CTkProgressBar)):
+                self.loading_progress_var.set(shown)
             self.loading_status_var.set(f"Preparing video frames... {shown}/{total}")
         else:
             self.loading_status_var.set(f"Preparing video frames... {current}")
@@ -477,7 +705,7 @@ class CutieLiteSession:
             self.resource_manager_module.tqdm = original_tqdm
 
     def _teardown_loading_ui(self) -> None:
-        if self.loading_bar is not None and self._loading_mode == "indeterminate":
+        if self.loading_bar is not None:
             try:
                 self.loading_bar.stop()
             except Exception:
@@ -503,60 +731,276 @@ class CutieLiteSession:
         return fps if fps > 0 else 24.0
 
     def _build_ui(self) -> None:
+        c = self._theme_colors
+        body_font = self._pick_font(["Segoe UI", "Calibri", "Arial"])
+
+        if self._ctk_available and ctk is not None:
+            main = ctk.CTkFrame(self.root, fg_color=c.get("bg", "#1A1A1A"), corner_radius=0)
+            main.pack(fill=self.tk.BOTH, expand=True)
+
+            viewer = ctk.CTkFrame(main, fg_color=c.get("panel", "#242424"), corner_radius=14)
+            viewer.pack(fill=self.tk.BOTH, expand=True, padx=10, pady=(10, 8))
+            viewer.pack_propagate(False)
+            ctk.CTkLabel(
+                viewer,
+                text="Prompt / Preview",
+                text_color=c.get("accent", "#00F0FF"),
+                font=(body_font, 12, "bold"),
+                anchor="w",
+            ).pack(fill=self.tk.X, padx=10, pady=(8, 4))
+            viewer_surface = self.tk.Frame(
+                viewer,
+                bg=c.get("video_bg", "#101010"),
+                highlightbackground=c.get("panel_alt", "#313131"),
+                highlightthickness=1,
+            )
+            viewer_surface.pack(fill=self.tk.BOTH, expand=True, padx=10, pady=(0, 10))
+
+            self.image_label = self.tk.Label(
+                viewer_surface,
+                text="",
+                bg=c.get("video_bg", "#101010"),
+                fg=c.get("muted", "#BCC7D0"),
+            )
+            self.image_label.pack(fill=self.tk.BOTH, expand=True)
+            self.image_label.bind("<Button-1>", lambda e: self._on_click(e, is_neg=False))
+            self.image_label.bind("<Button-3>", lambda e: self._on_click(e, is_neg=True))
+
+            control_row_1 = ctk.CTkFrame(main, fg_color="transparent")
+            control_row_1.pack(fill=self.tk.X, padx=10, pady=(0, 4))
+            self.btn_prev = self._make_action_button(control_row_1, "Previous", self._prev_frame, variant="player")
+            self.btn_prev.pack(side=self.tk.LEFT, padx=4)
+            self.btn_play = self._make_action_button(control_row_1, "Play", self._toggle_play, variant="player")
+            self.btn_play.pack(side=self.tk.LEFT, padx=4)
+            self.btn_next = self._make_action_button(control_row_1, "Next", self._next_frame, variant="player")
+            self.btn_next.pack(side=self.tk.LEFT, padx=4)
+            ctk.CTkLabel(
+                control_row_1,
+                textvariable=self.frame_var,
+                text_color=c.get("text", "#FFFFFF"),
+                font=(body_font, 11),
+            ).pack(side=self.tk.LEFT, padx=12)
+
+            control_row_2 = ctk.CTkFrame(main, fg_color="transparent")
+            control_row_2.pack(fill=self.tk.X, padx=10, pady=(0, 4))
+            ctk.CTkLabel(
+                control_row_2,
+                text="Object ID",
+                text_color=c.get("text", "#FFFFFF"),
+                font=(body_font, 11),
+            ).pack(side=self.tk.LEFT, padx=4)
+            self.obj_selector = self._make_object_selector(control_row_2)
+            self.obj_selector.pack(side=self.tk.LEFT, padx=4)
+            self._make_action_button(control_row_2, "Clear Object", self._clear_current_object, variant="secondary").pack(
+                side=self.tk.LEFT, padx=4
+            )
+            self._make_action_button(control_row_2, "Reset Prompts", self._reset_session, variant="secondary").pack(
+                side=self.tk.LEFT, padx=4
+            )
+
+            control_row_3 = ctk.CTkFrame(main, fg_color="transparent")
+            control_row_3.pack(fill=self.tk.X, padx=10, pady=(0, 4))
+            self.btn_backward = self._make_action_button(
+                control_row_3, "Propagate Backward", lambda: self._start_propagation("backward"), variant="primary"
+            )
+            self.btn_backward.pack(side=self.tk.LEFT, padx=4)
+            self.btn_forward = self._make_action_button(
+                control_row_3, "Propagate Forward", lambda: self._start_propagation("forward"), variant="primary"
+            )
+            self.btn_forward.pack(side=self.tk.LEFT, padx=4)
+            self.btn_export = self._make_action_button(control_row_3, "Export Masks", self._export_masks, variant="primary")
+            self.btn_export.pack(side=self.tk.LEFT, padx=4)
+            self.btn_close = self._make_action_button(control_row_3, "Close", self._on_close, variant="secondary")
+            self.btn_close.pack(side=self.tk.RIGHT, padx=4)
+
+            self._ctk_progress = ctk.CTkProgressBar(
+                main,
+                fg_color=c.get("panel_alt", "#313131"),
+                progress_color=c.get("accent", "#00F0FF"),
+                height=16,
+                corner_radius=8,
+            )
+            self._ctk_progress.pack(fill=self.tk.X, padx=12, pady=(6, 0))
+            self._ctk_progress.set(0.0)
+            ctk.CTkLabel(
+                main,
+                textvariable=self.status_var,
+                anchor="w",
+                text_color=c.get("muted", "#BCC7D0"),
+                font=(body_font, 10),
+            ).pack(fill=self.tk.X, padx=12, pady=(4, 10))
+            return
+
         main = self.ttk.Frame(self.root, padding=10)
         main.pack(fill=self.tk.BOTH, expand=True)
 
         viewer = self.ttk.LabelFrame(main, text="Prompt / Preview", padding=6)
         viewer.pack(fill=self.tk.BOTH, expand=True)
         viewer.pack_propagate(False)
-        self.image_label = self.ttk.Label(viewer, text="")
+        viewer_surface = self.tk.Frame(
+            viewer,
+            bg=c.get("video_bg", "#101010"),
+            highlightbackground=c.get("panel_alt", "#313131"),
+            highlightthickness=1,
+        )
+        viewer_surface.pack(fill=self.tk.BOTH, expand=True)
+        self.image_label = self.tk.Label(
+            viewer_surface,
+            text="",
+            bg=c.get("video_bg", "#101010"),
+            fg=c.get("muted", "#BCC7D0"),
+        )
         self.image_label.pack(fill=self.tk.BOTH, expand=True)
         self.image_label.bind("<Button-1>", lambda e: self._on_click(e, is_neg=False))
         self.image_label.bind("<Button-3>", lambda e: self._on_click(e, is_neg=True))
 
-        control_row_1 = self.ttk.Frame(main)
+        control_row_1 = self.tk.Frame(main, bg=c.get("bg", "#1A1A1A"))
         control_row_1.pack(fill=self.tk.X, pady=(8, 4))
-        self.btn_prev = self.ttk.Button(control_row_1, text="Previous", command=self._prev_frame)
+        self.btn_prev = self._make_action_button(control_row_1, "Previous", self._prev_frame, variant="player")
         self.btn_prev.pack(side=self.tk.LEFT, padx=4)
-        self.btn_play = self.ttk.Button(control_row_1, text="Play", command=self._toggle_play)
+        self.btn_play = self._make_action_button(control_row_1, "Play", self._toggle_play, variant="player")
         self.btn_play.pack(side=self.tk.LEFT, padx=4)
-        self.btn_next = self.ttk.Button(control_row_1, text="Next", command=self._next_frame)
+        self.btn_next = self._make_action_button(control_row_1, "Next", self._next_frame, variant="player")
         self.btn_next.pack(side=self.tk.LEFT, padx=4)
         self.ttk.Label(control_row_1, textvariable=self.frame_var).pack(side=self.tk.LEFT, padx=12)
 
-        control_row_2 = self.ttk.Frame(main)
+        control_row_2 = self.tk.Frame(main, bg=c.get("bg", "#1A1A1A"))
         control_row_2.pack(fill=self.tk.X, pady=(0, 4))
         self.ttk.Label(control_row_2, text="Object ID").pack(side=self.tk.LEFT, padx=4)
-        self.obj_spin = self.ttk.Spinbox(
-            control_row_2, from_=1, to=max(1, self.num_objects), textvariable=self.obj_var, width=6
-        )
-        self.obj_spin.pack(side=self.tk.LEFT, padx=4)
-        self.obj_spin.bind("<KeyRelease>", lambda _e: self._on_object_change())
-        self.obj_spin.bind("<<Increment>>", lambda _e: self._on_object_change())
-        self.obj_spin.bind("<<Decrement>>", lambda _e: self._on_object_change())
-        self.ttk.Button(control_row_2, text="Clear Object", command=self._clear_current_object).pack(
+        self.obj_selector = self._make_object_selector(control_row_2)
+        self.obj_selector.pack(side=self.tk.LEFT, padx=4)
+        self._make_action_button(control_row_2, "Clear Object", self._clear_current_object, variant="secondary").pack(
             side=self.tk.LEFT, padx=4
         )
-        self.ttk.Button(control_row_2, text="Reset Prompts", command=self._reset_session).pack(
+        self._make_action_button(control_row_2, "Reset Prompts", self._reset_session, variant="secondary").pack(
             side=self.tk.LEFT, padx=4
         )
 
-        control_row_3 = self.ttk.Frame(main)
+        control_row_3 = self.tk.Frame(main, bg=c.get("bg", "#1A1A1A"))
         control_row_3.pack(fill=self.tk.X, pady=(0, 4))
-        self.btn_backward = self.ttk.Button(
-            control_row_3, text="Propagate Backward", command=lambda: self._start_propagation("backward")
+        self.btn_backward = self._make_action_button(
+            control_row_3, "Propagate Backward", lambda: self._start_propagation("backward"), variant="primary"
         )
         self.btn_backward.pack(side=self.tk.LEFT, padx=4)
-        self.btn_forward = self.ttk.Button(
-            control_row_3, text="Propagate Forward", command=lambda: self._start_propagation("forward")
+        self.btn_forward = self._make_action_button(
+            control_row_3, "Propagate Forward", lambda: self._start_propagation("forward"), variant="primary"
         )
         self.btn_forward.pack(side=self.tk.LEFT, padx=4)
-        self.btn_export = self.ttk.Button(control_row_3, text="Export Masks", command=self._export_masks)
+        self.btn_export = self._make_action_button(control_row_3, "Export Masks", self._export_masks, variant="primary")
         self.btn_export.pack(side=self.tk.LEFT, padx=4)
-        self.ttk.Button(control_row_3, text="Close", command=self._on_close).pack(side=self.tk.RIGHT, padx=4)
+        self.btn_close = self._make_action_button(control_row_3, "Close", self._on_close, variant="secondary")
+        self.btn_close.pack(side=self.tk.RIGHT, padx=4)
 
         self.ttk.Progressbar(main, variable=self.progress_var, maximum=1.0).pack(fill=self.tk.X, pady=(6, 0))
         self.ttk.Label(main, textvariable=self.status_var, anchor="w").pack(fill=self.tk.X, pady=(4, 0))
+
+    def _make_action_button(self, parent, text: str, command, variant: str = "secondary"):
+        c = self._theme_colors
+        bg = c.get("secondary", "#394955")
+        height = 32
+        if variant == "primary":
+            bg = c.get("primary", "#175482")
+            height = 34
+        elif variant == "player":
+            bg = c.get("panel_alt", "#313131")
+            height = 30
+
+        font = (self._pick_font(["Segoe UI", "Calibri", "Arial"]), 11, "bold")
+        if self._ctk_available and ctk is not None:
+            return ctk.CTkButton(
+                parent,
+                text=text,
+                command=command,
+                fg_color=bg,
+                hover_color=c.get("secondary_hover", "#6D8B93"),
+                text_color=c.get("text", "#FFFFFF"),
+                corner_radius=14 if variant == "player" else 18,
+                border_width=0,
+                height=height,
+                font=font,
+            )
+
+        return self.tk.Button(
+            parent,
+            text=text,
+            command=command,
+            bg=bg,
+            fg=c.get("text", "#FFFFFF"),
+            activebackground=c.get("secondary_hover", "#6D8B93"),
+            activeforeground=c.get("text", "#FFFFFF"),
+            disabledforeground=c.get("muted", "#BCC7D0"),
+            relief=self.tk.FLAT,
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=c.get("panel_alt", "#313131"),
+            highlightcolor=c.get("accent", "#00F0FF"),
+            cursor="hand2",
+            padx=12,
+            pady=6,
+            font=font,
+        )
+
+    def _make_object_selector(self, parent):
+        values = [str(i) for i in range(1, max(1, self.num_objects) + 1)]
+        c = self._theme_colors
+
+        if self._ctk_available and ctk is not None:
+            selector = ctk.CTkOptionMenu(
+                parent,
+                variable=self.obj_var,
+                values=values,
+                command=lambda _v: self._on_object_change(),
+                fg_color=c.get("secondary", "#394955"),
+                button_color=c.get("secondary", "#394955"),
+                button_hover_color=c.get("secondary_hover", "#6D8B93"),
+                text_color=c.get("text", "#FFFFFF"),
+                dropdown_fg_color=c.get("panel_alt", "#313131"),
+                dropdown_text_color=c.get("text", "#FFFFFF"),
+                dropdown_hover_color=c.get("secondary_hover", "#6D8B93"),
+                corner_radius=8,
+                width=90,
+                font=(self._pick_font(["Segoe UI", "Calibri", "Arial"]), 10, "bold"),
+                dropdown_font=(self._pick_font(["Segoe UI", "Calibri", "Arial"]), 10),
+            )
+            return selector
+
+        selector = self.tk.OptionMenu(parent, self.obj_var, *values, command=lambda _v: self._on_object_change())
+        selector.configure(
+            bg=c.get("panel_alt", "#313131"),
+            fg=c.get("text", "#FFFFFF"),
+            activebackground=c.get("secondary_hover", "#6D8B93"),
+            activeforeground=c.get("text", "#FFFFFF"),
+            highlightthickness=1,
+            highlightbackground=c.get("panel_alt", "#313131"),
+            highlightcolor=c.get("accent", "#00F0FF"),
+            bd=0,
+            relief=self.tk.FLAT,
+            width=6,
+            font=(self._pick_font(["Segoe UI", "Calibri", "Arial"]), 10, "bold"),
+            cursor="hand2",
+        )
+        menu = selector["menu"]
+        menu.configure(
+            bg=c.get("panel_alt", "#313131"),
+            fg=c.get("text", "#FFFFFF"),
+            activebackground=c.get("secondary_hover", "#6D8B93"),
+            activeforeground=c.get("text", "#FFFFFF"),
+            bd=0,
+            relief=self.tk.FLAT,
+            font=(self._pick_font(["Segoe UI", "Calibri", "Arial"]), 10),
+        )
+        return selector
+
+    def _set_widget_state(self, widget, state: str) -> None:
+        try:
+            widget.configure(state=state)
+        except Exception:
+            # Some CTk widgets reject tkinter constants.
+            alt_state = "normal" if state in {"normal", self.tk.NORMAL} else "disabled"
+            try:
+                widget.configure(state=alt_state)
+            except Exception:
+                pass
 
     def _set_interaction_none(self) -> None:
         self.interaction = None
@@ -584,7 +1028,7 @@ class CutieLiteSession:
         except Exception:
             value = 1
         value = max(1, min(self.num_objects, value))
-        self.obj_var.set(value)
+        self.obj_var.set(str(value))
         self.current_obj = value
         self._set_interaction_none()
         self._refresh_frame()
@@ -711,9 +1155,9 @@ class CutieLiteSession:
 
     def _set_ui_for_propagation(self, busy: bool) -> None:
         state = "disabled" if busy else "normal"
-        for btn in (self.btn_prev, self.btn_play, self.btn_next, self.btn_backward, self.btn_forward, self.btn_export):
-            btn.configure(state=state)
-        self.obj_spin.configure(state=state)
+        for btn in (self.btn_prev, self.btn_play, self.btn_next, self.btn_backward, self.btn_forward, self.btn_export, self.btn_close):
+            self._set_widget_state(btn, state)
+        self._set_widget_state(self.obj_selector, state)
 
     def _start_propagation(self, direction: str) -> None:
         if self.propagating:
@@ -803,6 +1247,11 @@ class CutieLiteSession:
 
     def _on_propagation_progress(self, direction: str, current: int, total: int, progress: float) -> None:
         self.progress_var.set(progress)
+        if self._ctk_progress is not None:
+            try:
+                self._ctk_progress.set(max(0.0, min(1.0, float(progress))))
+            except Exception:
+                pass
         self.status_var.set(f"Propagating {direction}: {current}/{total}")
         self._refresh_frame()
 
@@ -810,6 +1259,11 @@ class CutieLiteSession:
         self.propagating = False
         self._set_ui_for_propagation(False)
         self.progress_var.set(1.0)
+        if self._ctk_progress is not None:
+            try:
+                self._ctk_progress.set(1.0)
+            except Exception:
+                pass
         self.status_var.set(f"Propagation {direction} complete ({total} frames).")
         self._refresh_frame()
 
@@ -868,6 +1322,11 @@ class CutieLiteSession:
         self.messagebox.showinfo("Cutie-lite", "Binary mask export complete.")
 
     def _refresh_frame(self) -> None:
+        if self._ctk_progress is not None:
+            try:
+                self._ctk_progress.set(max(0.0, min(1.0, float(self.progress_var.get()))))
+            except Exception:
+                pass
         frame = self.res_man.get_image(self.current_idx)
         mask = self._current_mask()
         vis = self.get_visualization("davis", frame, mask, None, list(range(1, self.num_objects + 1)))

@@ -42,11 +42,11 @@ Status legend:
 ## Workspace / Ops
 - `[x]` Workspace root support
 - `[~]` Workspace migration from legacy paths
-- `[x]` Purge workspace UX parity
+- `[x]` Purge workspace removed by design (manual cleanup only)
 
 ## Launcher / Runtime
 - `[x]` Manifest-driven update path
 - `[x]` Install state file
 - `[x]` AWS auth retained with retries/timeouts
-- `[x]` Default launch mode set to new app (`EZFRAMES_APP_MODE=new`)
-- `[x]` Legacy mode only as fallback (`EZFRAMES_APP_MODE=legacy`)
+- `[x]` Main app launch is ticket-gated (direct launch without launcher ticket is blocked)
+- `[x]` Legacy mode removed from runtime path

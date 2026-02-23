@@ -5,6 +5,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from ezframes.common.manifest_security import TRUSTED_RELEASE_HOSTS
 
 @dataclass(frozen=True)
 class AppPaths:
@@ -99,6 +100,10 @@ class AppPaths:
 @dataclass(frozen=True)
 class RuntimeConfig:
     manifest_url: str
+    allow_manifest_url_override: bool = False
+    allow_insecure_http: bool = False
+    trusted_manifest_hosts: tuple[str, ...] = TRUSTED_RELEASE_HOSTS
+    trusted_asset_hosts: tuple[str, ...] = TRUSTED_RELEASE_HOSTS
     update_timeout_seconds: int = 30
     download_chunk_size: int = 1024 * 1024
     connect_timeout_seconds: int = 10
@@ -107,11 +112,27 @@ class RuntimeConfig:
 
     @classmethod
     def from_env(cls) -> "RuntimeConfig":
+        default_manifest_url = "https://github.com/tcolangelo99/ezframes_live/releases/latest/download/manifest.v1.json"
+        allow_override = os.environ.get("EZFRAMES_DEV_ALLOW_MANIFEST_OVERRIDE", "").strip() == "1"
+        manifest_url = default_manifest_url
+        if allow_override:
+            manifest_url = os.environ.get("EZFRAMES_MANIFEST_URL", default_manifest_url)
+
+        # Host overrides are development-only and off by default.
+        trusted_hosts = TRUSTED_RELEASE_HOSTS
+        if allow_override:
+            raw_hosts = os.environ.get("EZFRAMES_DEV_TRUSTED_RELEASE_HOSTS", "").strip()
+            if raw_hosts:
+                parsed = tuple(h.strip() for h in raw_hosts.split(",") if h.strip())
+                if parsed:
+                    trusted_hosts = parsed
+
         return cls(
-            manifest_url=os.environ.get(
-                "EZFRAMES_MANIFEST_URL",
-                "https://github.com/tcolangelo99/ezframes_live/releases/latest/download/manifest.v1.json",
-            ),
+            manifest_url=manifest_url,
+            allow_manifest_url_override=allow_override,
+            allow_insecure_http=allow_override and os.environ.get("EZFRAMES_DEV_ALLOW_HTTP_MANIFEST", "").strip() == "1",
+            trusted_manifest_hosts=trusted_hosts,
+            trusted_asset_hosts=trusted_hosts,
             update_timeout_seconds=int(os.environ.get("EZFRAMES_UPDATE_TIMEOUT", "30")),
             download_chunk_size=int(os.environ.get("EZFRAMES_DOWNLOAD_CHUNK", str(1024 * 1024))),
             connect_timeout_seconds=int(os.environ.get("EZFRAMES_CONNECT_TIMEOUT", "10")),

@@ -32,8 +32,9 @@ log = logging.getLogger(__name__)
 class AuthConfig:
     register_url: str = "https://pk4xdhzw1h.execute-api.eu-north-1.amazonaws.com/testing/RegisterUser"
     subscription_url: str = "https://5d2d56nba4.execute-api.eu-north-1.amazonaws.com/v1/check-subscription"
-    cache_ttl_days: int = 7
+    cache_ttl_days: int = 0
     launch_ticket_ttl_seconds: int = 180
+    allow_free_tier: bool = True
 
 
 @dataclass(frozen=True)
@@ -122,8 +123,9 @@ class AuthService:
     def __init__(self, paths: AppPaths, runtime: RuntimeConfig, cfg: AuthConfig | None = None):
         self.paths = paths
         self.cfg = cfg or AuthConfig(
-            cache_ttl_days=int(os.environ.get("EZFRAMES_AUTH_CACHE_TTL_DAYS", "7")),
+            cache_ttl_days=int(os.environ.get("EZFRAMES_AUTH_CACHE_TTL_DAYS", "0")),
             launch_ticket_ttl_seconds=int(os.environ.get("EZFRAMES_LAUNCH_TICKET_TTL_SECONDS", "180")),
+            allow_free_tier=os.environ.get("EZFRAMES_ALLOW_FREE_TIER", "1").strip() not in {"0", "false", "False"},
         )
         self.client = AuthClient(runtime, self.cfg)
         self.creds = CredentialStore()
@@ -170,6 +172,8 @@ class AuthService:
             conn.commit()
 
     def _cached_active_session(self) -> AuthSession | None:
+        if int(self.cfg.cache_ttl_days) <= 0:
+            return None
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
                 "SELECT user_email, last_check_date, subscription_status, signature FROM subscriptions LIMIT 1"
@@ -192,51 +196,310 @@ class AuthService:
             return None
         return AuthSession(email=email, subscription_status=status, source="cache")
 
+    def _icon_candidates(self) -> list[Path]:
+        candidates: list[Path] = [
+            self.paths.assets_dir / "icons" / "ezframes_icon.ico",
+            self.paths.assets_dir / "icons" / "launcher_icon.ico",
+            self.paths.install_root / "icons" / "ezframes_icon.ico",
+        ]
+        for root in self.paths.source_roots():
+            candidates.append(root / "icons" / "ezframes_icon.ico")
+            candidates.append(root / "ezframes_icon.ico")
+            candidates.append(root / "launcher_icon.ico")
+        return candidates
+
+    def _apply_window_icon(self, window) -> None:
+        for candidate in self._icon_candidates():
+            try:
+                if candidate.exists():
+                    window.iconbitmap(str(candidate))
+                    return
+            except Exception:
+                continue
+
+    def _last_cached_email(self) -> str:
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                row = conn.execute(
+                    "SELECT user_email FROM subscriptions ORDER BY last_check_date DESC LIMIT 1"
+                ).fetchone()
+            if not row:
+                return ""
+            return str(row[0]).strip().lower()
+        except Exception:
+            return ""
+
     def ensure_subscription_interactive(self) -> AuthSession | None:
         cached = self._cached_active_session()
         if cached:
             log.info("Subscription cache valid for %s", cached.email)
             return cached
 
-        # GUI prompt on demand to keep pythonw UX friendly.
+        # Visible launcher-style auth window for pythonw UX.
         import tkinter as tk
-        from tkinter import messagebox, simpledialog
+        import tkinter.font as tkfont
+
+        def pick_font(candidates: list[str], fallback: str = "Segoe UI") -> str:
+            try:
+                available = {name.lower() for name in tkfont.families()}
+            except Exception:
+                available = set()
+            if not available:
+                return candidates[0] if candidates else fallback
+            for candidate in candidates:
+                if candidate.lower() in available:
+                    return candidate
+            return fallback
+
+        colors = {
+            "bg": "#1A1A1A",
+            "panel": "#242424",
+            "panel_alt": "#313131",
+            "text": "#FFFFFF",
+            "muted": "#BCC7D0",
+            "accent": "#00F0FF",
+            "primary": "#175482",
+            "primary_hover": "#2A6D9E",
+            "secondary": "#394955",
+            "secondary_hover": "#6D8B93",
+            "danger": "#D16A74",
+        }
+        body_font = pick_font(["Segoe UI", "Calibri", "Arial"])
+        accent_font = pick_font(["WWE Raw", "Segoe UI Semibold", "Segoe UI"], fallback=body_font)
 
         root = tk.Tk()
-        root.withdraw()
+        root.title("EzFrames Launcher")
         root.attributes("-topmost", True)
-        email = simpledialog.askstring("EzFrames Login", "Email:", parent=root)
-        if not email:
-            root.destroy()
-            return None
-        password = simpledialog.askstring("EzFrames Login", "Password:", show="*", parent=root)
-        if not password:
-            root.destroy()
-            return None
+        root.resizable(False, False)
+        root.geometry("470x320")
+        root.configure(bg=colors["bg"])
+        self._apply_window_icon(root)
 
-        try:
-            if not self.client.sign_in(email, password):
-                messagebox.showerror("Login Failed", "Invalid credentials or network error.")
-                root.destroy()
-                return None
-            status = self.client.check_subscription_status(email, password)
-            self._cache_status(email, status)
-            if status != "ACTIVE":
-                messagebox.showwarning("Subscription Inactive", "Your subscription is not active.")
-                root.destroy()
-                return None
+        frame = tk.Frame(
+            root,
+            bg=colors["panel"],
+            highlightbackground=colors["panel_alt"],
+            highlightthickness=1,
+            bd=0,
+        )
+        frame.pack(fill="both", expand=True, padx=12, pady=12)
 
-            # Store minimal session marker in credential manager (no AWS changes).
-            session_payload = json.dumps({"email": email, "status": status})
-            self.creds.write("session", email, session_payload)
-            messagebox.showinfo("Login Successful", "Access granted.")
-            return AuthSession(email=email.strip().lower(), subscription_status="ACTIVE", source="aws")
-        except requests.RequestException as exc:
-            log.exception("Auth request failed: %s", exc)
-            messagebox.showerror("Network Error", str(exc))
-            return None
-        finally:
-            root.destroy()
+        title_lbl = tk.Label(
+            frame,
+            text="EzFrames",
+            bg=colors["panel"],
+            fg=colors["text"],
+            anchor="w",
+            font=(accent_font, 24),
+        )
+        title_lbl.pack(fill="x", padx=12, pady=(10, 0))
+
+        title2_lbl = tk.Label(
+            frame,
+            text="Sign in for Pro features",
+            bg=colors["panel"],
+            fg=colors["accent"],
+            anchor="w",
+            font=(body_font, 11, "bold"),
+        )
+        title2_lbl.pack(fill="x", padx=12, pady=(2, 0))
+
+        subtitle_lbl = tk.Label(
+            frame,
+            text="You can continue in Free mode (Absdiff + ORB only) without signing in.",
+            bg=colors["panel"],
+            fg=colors["muted"],
+            anchor="w",
+            wraplength=390,
+            justify="left",
+            font=(body_font, 10),
+        )
+        subtitle_lbl.pack(fill="x", padx=12, pady=(4, 10))
+
+        email_lbl = tk.Label(
+            frame,
+            text="Email",
+            bg=colors["panel"],
+            fg=colors["text"],
+            anchor="w",
+            font=(body_font, 10, "bold"),
+        )
+        email_lbl.pack(fill="x", padx=12, pady=(0, 2))
+        email_var = tk.StringVar(value=self._last_cached_email())
+        email_entry = tk.Entry(
+            frame,
+            textvariable=email_var,
+            bg=colors["panel_alt"],
+            fg=colors["text"],
+            insertbackground=colors["text"],
+            relief=tk.FLAT,
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=colors["panel_alt"],
+            highlightcolor=colors["accent"],
+            font=(body_font, 10),
+        )
+        email_entry.pack(fill="x", padx=12, ipady=6)
+
+        password_lbl = tk.Label(
+            frame,
+            text="Password",
+            bg=colors["panel"],
+            fg=colors["text"],
+            anchor="w",
+            font=(body_font, 10, "bold"),
+        )
+        password_lbl.pack(fill="x", padx=12, pady=(8, 2))
+        password_var = tk.StringVar(value="")
+        password_entry = tk.Entry(
+            frame,
+            textvariable=password_var,
+            show="*",
+            bg=colors["panel_alt"],
+            fg=colors["text"],
+            insertbackground=colors["text"],
+            relief=tk.FLAT,
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=colors["panel_alt"],
+            highlightcolor=colors["accent"],
+            font=(body_font, 10),
+        )
+        password_entry.pack(fill="x", padx=12, ipady=6)
+
+        status_var = tk.StringVar(value="Enter your credentials.")
+        status_lbl = tk.Label(
+            frame,
+            textvariable=status_var,
+            bg=colors["panel"],
+            fg=colors["muted"],
+            anchor="w",
+            justify="left",
+            wraplength=430,
+            font=(body_font, 10),
+        )
+        status_lbl.pack(fill="x", padx=12, pady=(10, 4))
+
+        button_row = tk.Frame(frame, bg=colors["panel"])
+        button_row.pack(fill="x", padx=12, pady=(4, 10))
+
+        result: dict[str, AuthSession | None] = {"session": None}
+        in_flight = {"value": False}
+
+        def set_status(message: str, color: str = colors["muted"]) -> None:
+            status_var.set(message)
+            status_lbl.configure(fg=color)
+
+        def set_controls(enabled: bool) -> None:
+            state = tk.NORMAL if enabled else tk.DISABLED
+            email_entry.configure(state=state)
+            password_entry.configure(state=state)
+            login_btn.configure(state=state)
+            if continue_free_btn is not None:
+                continue_free_btn.configure(state=state)
+            cancel_btn.configure(state=state)
+
+        def close_with_session(session: AuthSession | None) -> None:
+            result["session"] = session
+            if root.winfo_exists():
+                root.destroy()
+
+        def resolve_free_email() -> str:
+            maybe_email = email_var.get().strip().lower()
+            if maybe_email:
+                return maybe_email
+            return "free@local.ezframes"
+
+        def on_login() -> None:
+            if in_flight["value"]:
+                return
+
+            email = email_var.get().strip().lower()
+            password = password_var.get().strip()
+            if not email or not password:
+                set_status("Email and password are required.", colors["danger"])
+                return
+
+            in_flight["value"] = True
+            set_controls(False)
+            set_status("Checking credentials...", colors["accent"])
+            root.update_idletasks()
+
+            try:
+                if not self.client.sign_in(email, password):
+                    set_status("Login failed. Check your credentials and try again.", colors["danger"])
+                    return
+
+                status = self.client.check_subscription_status(email, password)
+                self._cache_status(email, status)
+                if status != "ACTIVE":
+                    set_status("Subscription inactive. Please renew your plan.", colors["danger"])
+                    return
+
+                session_payload = json.dumps({"email": email, "status": status})
+                self.creds.write("session", email, session_payload)
+                close_with_session(AuthSession(email=email, subscription_status="ACTIVE", source="aws"))
+            except requests.RequestException as exc:
+                log.exception("Auth request failed: %s", exc)
+                set_status(f"Network error: {exc}", colors["danger"])
+            except Exception as exc:
+                log.exception("Unexpected auth error: %s", exc)
+                set_status(f"Authentication failed: {exc}", colors["danger"])
+            finally:
+                in_flight["value"] = False
+                if root.winfo_exists():
+                    set_controls(True)
+
+        def on_continue_free() -> None:
+            close_with_session(AuthSession(email=resolve_free_email(), subscription_status="FREE", source="free"))
+
+        def on_cancel() -> None:
+            close_with_session(None)
+
+        def make_button(parent, text: str, command, variant: str = "secondary") -> tk.Button:
+            bg = colors["secondary"]
+            if variant == "primary":
+                bg = colors["primary"]
+            return tk.Button(
+                parent,
+                text=text,
+                command=command,
+                bg=bg,
+                fg=colors["text"],
+                activebackground=colors["secondary_hover"] if variant == "secondary" else colors["primary_hover"],
+                activeforeground=colors["text"],
+                disabledforeground=colors["muted"],
+                relief=tk.FLAT,
+                bd=0,
+                highlightthickness=1,
+                highlightbackground=colors["panel_alt"],
+                highlightcolor=colors["accent"],
+                cursor="hand2",
+                padx=12,
+                pady=6,
+                font=(body_font, 10, "bold"),
+            )
+
+        cancel_btn = make_button(button_row, "Cancel", on_cancel, variant="secondary")
+        cancel_btn.pack(side="right")
+
+        continue_free_btn = None
+        if self.cfg.allow_free_tier:
+            continue_free_btn = make_button(button_row, "Continue Free", on_continue_free, variant="secondary")
+            continue_free_btn.pack(side="right", padx=(0, 8))
+        login_btn = make_button(button_row, "Sign In", on_login, variant="primary")
+        login_btn.pack(side="right", padx=(0, 8))
+
+        root.bind("<Return>", lambda _e: on_login())
+        root.bind("<Escape>", lambda _e: on_cancel())
+
+        if email_var.get().strip():
+            password_entry.focus_set()
+        else:
+            email_entry.focus_set()
+
+        root.mainloop()
+        return result["session"]
 
     def issue_launch_ticket(self, session: AuthSession) -> Path:
         return issue_launch_ticket(

@@ -32,7 +32,9 @@ def load_install_state(state_dir: Path) -> InstallState:
     if not path.exists():
         return InstallState()
 
-    with path.open("r", encoding="utf-8") as fh:
+    # Accept optional UTF-8 BOM for resilience against manual edits done by
+    # Windows tooling that may emit BOM-prefixed UTF-8.
+    with path.open("r", encoding="utf-8-sig") as fh:
         raw: dict[str, Any] = json.load(fh)
 
     return InstallState(
@@ -52,4 +54,3 @@ def save_install_state(state_dir: Path, state: InstallState) -> None:
     with tmp.open("w", encoding="utf-8") as fh:
         json.dump(asdict(state), fh, indent=2, sort_keys=True)
     tmp.replace(path)
-

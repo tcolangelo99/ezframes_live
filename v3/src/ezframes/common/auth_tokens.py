@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import base64
+import ctypes
 import hashlib
 import hmac
 import json
 import logging
 import os
+from ctypes import wintypes
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -21,9 +23,12 @@ log = logging.getLogger(__name__)
 
 _CRED_PREFIX = "EzFrames/v3/"
 _SIGNING_KEY_TARGET = "auth-signing-key"
-_SIGNING_KEY_FILE = "auth_signing_key.bin"
+_LEGACY_SIGNING_KEY_FILE = "auth_signing_key.bin"
+_SECURE_SIGNING_KEY_FILE = "auth_signing_key.dpapi"
+_USED_NONCES_FILE = "used_launch_nonces.v1.json"
 _TICKET_SCHEMA_VERSION = "1"
 _TICKET_PREFIX = "launch_ticket"
+_ALLOWED_TICKET_STATUSES = {"ACTIVE", "FREE"}
 
 
 @dataclass(frozen=True)
@@ -77,6 +82,7 @@ def _write_cred_secret(target: str, secret: bytes) -> bool:
         "TargetName": _CRED_PREFIX + target,
         "UserName": "ezframes",
         "CredentialBlob": encoded,
+        # User-level persistence avoids admin requirements.
         "Persist": win32cred.CRED_PERSIST_LOCAL_MACHINE,
         "Comment": "EzFrames signing key",
     }
@@ -87,12 +93,80 @@ def _write_cred_secret(target: str, secret: bytes) -> bool:
         return False
 
 
-def _secret_file_path(state_dir: Path) -> Path:
-    return state_dir / _SIGNING_KEY_FILE
+class _DATA_BLOB(ctypes.Structure):
+    _fields_ = [("cbData", wintypes.DWORD), ("pbData", ctypes.POINTER(ctypes.c_ubyte))]
 
 
-def _read_secret_file(state_dir: Path) -> bytes | None:
-    path = _secret_file_path(state_dir)
+def _blob_from_bytes(value: bytes) -> tuple[_DATA_BLOB, ctypes.Array]:
+    if not value:
+        value = b"\x00"
+    buffer = ctypes.create_string_buffer(value)
+    blob = _DATA_BLOB(len(value), ctypes.cast(buffer, ctypes.POINTER(ctypes.c_ubyte)))
+    return blob, buffer
+
+
+def _dpapi_protect(raw: bytes) -> bytes:
+    if os.name != "nt":
+        raise RuntimeError("DPAPI protection is only available on Windows.")
+
+    crypt32 = ctypes.windll.crypt32
+    kernel32 = ctypes.windll.kernel32
+
+    in_blob, in_buf = _blob_from_bytes(raw)
+    out_blob = _DATA_BLOB()
+    if not crypt32.CryptProtectData(
+        ctypes.byref(in_blob),
+        None,
+        None,
+        None,
+        None,
+        0,
+        ctypes.byref(out_blob),
+    ):
+        raise ctypes.WinError()
+    try:
+        return ctypes.string_at(out_blob.pbData, out_blob.cbData)
+    finally:
+        if out_blob.pbData:
+            kernel32.LocalFree(out_blob.pbData)
+
+
+def _dpapi_unprotect(raw: bytes) -> bytes:
+    if os.name != "nt":
+        raise RuntimeError("DPAPI unprotection is only available on Windows.")
+
+    crypt32 = ctypes.windll.crypt32
+    kernel32 = ctypes.windll.kernel32
+
+    in_blob, in_buf = _blob_from_bytes(raw)
+    out_blob = _DATA_BLOB()
+    if not crypt32.CryptUnprotectData(
+        ctypes.byref(in_blob),
+        None,
+        None,
+        None,
+        None,
+        0,
+        ctypes.byref(out_blob),
+    ):
+        raise ctypes.WinError()
+    try:
+        return ctypes.string_at(out_blob.pbData, out_blob.cbData)
+    finally:
+        if out_blob.pbData:
+            kernel32.LocalFree(out_blob.pbData)
+
+
+def _legacy_secret_file_path(state_dir: Path) -> Path:
+    return state_dir / _LEGACY_SIGNING_KEY_FILE
+
+
+def _secure_secret_file_path(state_dir: Path) -> Path:
+    return state_dir / _SECURE_SIGNING_KEY_FILE
+
+
+def _read_legacy_secret_file(state_dir: Path) -> bytes | None:
+    path = _legacy_secret_file_path(state_dir)
     if not path.exists():
         return None
     try:
@@ -107,12 +181,48 @@ def _read_secret_file(state_dir: Path) -> bytes | None:
         return None
 
 
-def _write_secret_file(state_dir: Path, secret: bytes) -> None:
-    state_dir.mkdir(parents=True, exist_ok=True)
-    path = _secret_file_path(state_dir)
-    tmp = path.with_suffix(".tmp")
-    tmp.write_text(_b64_encode(secret), encoding="ascii")
-    tmp.replace(path)
+def _remove_legacy_secret_file(state_dir: Path) -> None:
+    path = _legacy_secret_file_path(state_dir)
+    if not path.exists():
+        return
+    try:
+        path.unlink()
+    except Exception:
+        log.warning("Failed to remove legacy signing key file: %s", path)
+
+
+def _read_secure_secret_file(state_dir: Path) -> bytes | None:
+    path = _secure_secret_file_path(state_dir)
+    if not path.exists():
+        return None
+    try:
+        content = path.read_text(encoding="ascii").strip()
+    except Exception:
+        return None
+    if not content.startswith("DPAPI1:"):
+        return None
+    encoded = content.split(":", 1)[1].strip()
+    if not encoded:
+        return None
+    try:
+        protected = _b64_decode(encoded)
+        return _dpapi_unprotect(protected)
+    except Exception:
+        return None
+
+
+def _write_secure_secret_file(state_dir: Path, secret: bytes) -> bool:
+    path = _secure_secret_file_path(state_dir)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        protected = _dpapi_protect(secret)
+        data = "DPAPI1:" + _b64_encode(protected)
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(data, encoding="ascii")
+        tmp.replace(path)
+        return True
+    except Exception:
+        return False
 
 
 def load_or_create_signing_key(state_dir: Path) -> bytes:
@@ -120,15 +230,27 @@ def load_or_create_signing_key(state_dir: Path) -> bytes:
     if key:
         return key
 
-    key = _read_secret_file(state_dir)
+    key = _read_secure_secret_file(state_dir)
     if key:
-        # Upgrade from file fallback into Credential Manager when possible.
         _write_cred_secret(_SIGNING_KEY_TARGET, key)
         return key
 
+    key = _read_legacy_secret_file(state_dir)
+    if key:
+        persisted = _write_cred_secret(_SIGNING_KEY_TARGET, key)
+        if not persisted:
+            persisted = _write_secure_secret_file(state_dir, key)
+        if not persisted:
+            raise RuntimeError("Failed to migrate signing key into secure storage.")
+        _remove_legacy_secret_file(state_dir)
+        return key
+
     key = os.urandom(32)
-    if not _write_cred_secret(_SIGNING_KEY_TARGET, key):
-        _write_secret_file(state_dir, key)
+    persisted = _write_cred_secret(_SIGNING_KEY_TARGET, key)
+    if not persisted:
+        persisted = _write_secure_secret_file(state_dir, key)
+    if not persisted:
+        raise RuntimeError("Failed to persist signing key in secure storage.")
     return key
 
 
@@ -169,6 +291,10 @@ def issue_launch_ticket(
 
     email_norm = email.strip().lower()
     status_norm = status.strip().upper()
+    if status_norm not in _ALLOWED_TICKET_STATUSES:
+        allowed = ", ".join(sorted(_ALLOWED_TICKET_STATUSES))
+        raise ValueError(f"Unsupported launch status '{status_norm}'. Allowed: {allowed}.")
+
     issued_at = now.isoformat()
     expires_at = expires.isoformat()
     signature = _sign_fields(
@@ -213,6 +339,49 @@ def _parse_utc(value: str) -> datetime | None:
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(timezone.utc)
+
+
+def _used_nonces_path(state_dir: Path) -> Path:
+    return state_dir / _USED_NONCES_FILE
+
+
+def _load_used_nonces(state_dir: Path) -> dict[str, str]:
+    path = _used_nonces_path(state_dir)
+    if not path.exists():
+        return {}
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise RuntimeError(f"Used nonce registry is unreadable: {path}") from exc
+    if not isinstance(raw, dict):
+        raise RuntimeError(f"Used nonce registry has invalid structure: {path}")
+
+    out: dict[str, str] = {}
+    for key, value in raw.items():
+        nonce = str(key).strip()
+        expiry = str(value).strip()
+        if nonce and expiry:
+            out[nonce] = expiry
+    return out
+
+
+def _save_used_nonces(state_dir: Path, entries: dict[str, str]) -> None:
+    path = _used_nonces_path(state_dir)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(entries, indent=2, sort_keys=True), encoding="utf-8")
+    tmp.replace(path)
+
+
+def _prune_used_nonces(entries: dict[str, str], now: datetime) -> dict[str, str]:
+    pruned: dict[str, str] = {}
+    for nonce, expires_raw in entries.items():
+        expires_dt = _parse_utc(expires_raw)
+        if expires_dt is None:
+            continue
+        if expires_dt >= now:
+            pruned[nonce] = expires_dt.isoformat()
+    return pruned
 
 
 def validate_launch_ticket(
@@ -271,10 +440,20 @@ def validate_launch_ticket(
         return TicketValidation(valid=False, reason="Launch ticket issued time is invalid.")
     if now - expires_dt > skew:
         return TicketValidation(valid=False, reason="Launch ticket expired.")
-    if status != "ACTIVE":
-        return TicketValidation(valid=False, reason="Subscription is not active.")
+    if status not in _ALLOWED_TICKET_STATUSES:
+        allowed = ", ".join(sorted(_ALLOWED_TICKET_STATUSES))
+        return TicketValidation(valid=False, reason=f"Unsupported launch status '{status}'. Allowed: {allowed}.")
+
+    try:
+        used_nonces = _prune_used_nonces(_load_used_nonces(state_dir), now=now)
+    except Exception as exc:
+        return TicketValidation(valid=False, reason=f"Launch ticket nonce registry error: {exc}")
+    if nonce in used_nonces:
+        return TicketValidation(valid=False, reason="Launch ticket nonce was already used.")
 
     if consume:
+        used_nonces[nonce] = expires_dt.isoformat()
+        _save_used_nonces(state_dir, used_nonces)
         try:
             ticket_path.unlink()
         except Exception:

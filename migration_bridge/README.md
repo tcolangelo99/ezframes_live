@@ -8,7 +8,7 @@ This folder contains the source for the temporary bridge executable used on lega
   2. If missing, downloads latest bootstrap installer assets from GitHub Releases.
   3. Shows a top-most progress window during download/install so users can see migration status.
   4. Runs installer silently and launches v3.
-  5. Falls back to `ezcutie_legacy.exe` if migration fails.
+  5. Exits with clear error messaging if migration fails (no legacy fallback).
 
 Release dependency:
 - Latest release in `tcolangelo99/ezframes_live` must include:

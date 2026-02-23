@@ -9,7 +9,17 @@ This is the v3 migration scaffold for EzFrames:
 - Main app module: `python -m ezframes.app` (normally launched by launcher with auth ticket).
 - Native Cutie-lite entrypoint: `python -m ezframes.cutie_lite` (no Qt interactive demo).
 
-Legacy scripts remain in place for rollback.
+Legacy mode is removed from the v3 runtime path.
+
+See also:
+- `SECURITY.md` for public security controls and disclosure guidance.
+- `docs/INTERNAL_SECURITY_RUNBOOK_TEMPLATE.md` for private runbook structure (template only).
+
+## Documentation Policy
+
+- Public docs in this repo should describe architecture and security controls.
+- Do not commit secrets, private keys, production credentials, or incident-response runbooks.
+- Keep sensitive operational details in private/internal documentation outside this repo.
 
 ## Local Dev
 
@@ -17,7 +27,7 @@ Legacy scripts remain in place for rollback.
 cd master
 ..\venv\Scripts\python.exe -m pip install -e .
 set PYTHONPATH=src
-..\venv\Scripts\python.exe -m ezframes.launcher --check-only --skip-update
+..\venv\Scripts\python.exe -m ezframes.launcher --check-only
 ```
 
 Direct launcher entrypoint (developer/internal):
@@ -31,6 +41,16 @@ pythonw -m ezframes.launcher
 - AWS endpoints are unchanged and configurable via env vars.
 - App launch is now ticket-gated by the launcher. Direct app invocation is blocked unless a valid launcher-issued ticket is present.
 - Release/update source is manifest-driven and designed for GitHub Releases.
+- Manifest authenticity is enforced with Ed25519 signature verification (trusted public key embedded in launcher/app code).
+- Manifest and asset URLs are restricted to trusted hosts, with schema/version validation before apply.
+- Update flow is forward-only (downgrades and non-forward updates are rejected).
+- Update flow is mandatory and promptless for required versions:
+  - if manifest target is newer, launcher applies update automatically;
+  - if `min_launcher_version` is newer than current launcher, launcher still force-updates and relaunches.
+- Launch tickets are one-time-use and nonce-protected to prevent replay.
+- Signing keys are stored in Windows Credential Manager when available, with DPAPI-protected file fallback.
+- Interrupted updates self-heal on next launch by restoring `.bak` targets before continuing.
+- Production launch ignores `EZFRAMES_MANIFEST_URL` unless `EZFRAMES_DEV_ALLOW_MANIFEST_OVERRIDE=1` is explicitly set.
 - `EZFRAMES_SOURCE_ROOT` can be set explicitly in development if your working directory is not the repo root.
 - `Track with Cutie` uses native Cutie-lite only.
 - First-run migration copies data from legacy installs, then cleans known legacy install roots (`%ProgramFiles%\\ezframes_live` and `Documents\\ezframes`) to remove old runtime artifacts.
@@ -39,6 +59,27 @@ pythonw -m ezframes.launcher
   - `runtime/python` (base CPython)
   - `runtime/env/Lib/site-packages` (portable dependency bundle)
   - `app/` (ezframes package payload)
+
+## Entitlements (Free vs Pro)
+
+Launcher auth now supports two launch ticket statuses:
+- `ACTIVE` -> Pro tier
+- `FREE` -> Free tier
+
+Free tier behavior:
+- Motion method is locked to `Absdiff`.
+- Feature detector is locked to `ORB`.
+- Full tuning sliders remain available for Absdiff + ORB pipeline.
+- Pro-only actions are disabled: `Track with Cutie`, `Interpolate Last Output`.
+- Pro-only outputs are disabled: `Use Cutie Masks`, `Output Masked Video (Alpha)`, `Output Image Sequence`, `Debug Output`.
+
+Pro tier behavior:
+- All current app features are enabled.
+
+Operational flags:
+- `EZFRAMES_ALLOW_FREE_TIER=0` disables launcher-side "Continue Free" button.
+- App tier is passed via launcher ticket validation and exposed as `EZFRAMES_ENTITLEMENT` (`free`/`pro`) for runtime gating.
+- During mandatory updates, a topmost updater window is always shown and remains visible through relaunch handoff.
 
 ## Production Build (No PyInstaller)
 
@@ -59,6 +100,13 @@ powershell .\scripts\release\build_bootstrap_payload.ps1 -RuntimePythonDir .\run
 ```
 
 Upload the generated assets and `manifest.v1.json` to the matching GitHub release tag.
+
+Manifest signing is required for production releases:
+
+```powershell
+$env:EZFRAMES_MANIFEST_SIGNING_KEY="<base64-raw-ed25519-private-key>"
+$env:EZFRAMES_MANIFEST_KEY_ID="ezframes-prod-2026-02"
+```
 
 Build installer (Inno Setup compiler `ISCC.exe`):
 

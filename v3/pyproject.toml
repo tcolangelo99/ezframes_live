@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ezframes"
-version = "3.0.4"
+version = "3.0.8"
 description = "EzFrames v3 launcher and app runtime (non-PyInstaller)"
 readme = "README_V3.md"
 requires-python = ">=3.11"
@@ -15,6 +15,7 @@ dependencies = [
   "pillow>=10.0.0",
   "scipy>=1.12.0",
   "tqdm>=4.66.0",
+  "cryptography>=46.0.0",
 ]
 
 [project.optional-dependencies]

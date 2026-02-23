@@ -86,7 +86,10 @@ class MigrationProgressWindow:
     def start(self) -> None:
         self._thread = threading.Thread(target=self._run, name="MigrationProgressUI", daemon=True)
         self._thread.start()
-        self._ready.wait(timeout=2.0)
+        if not self._ready.wait(timeout=10.0):
+            raise RuntimeError("Migration progress UI startup timed out.")
+        if not self._enabled:
+            raise RuntimeError("Migration progress UI could not be initialized.")
 
     def _run(self) -> None:
         try:
@@ -168,7 +171,7 @@ class MigrationProgressWindow:
             root.after(50, pump)
             root.mainloop()
         except Exception:
-            logging.exception("Progress UI unavailable; continuing without window.")
+            logging.exception("Progress UI unavailable.")
             self._enabled = False
             self._ready.set()
 
@@ -383,15 +386,11 @@ def wait_for_v3_install(
     return False
 
 
-def launch_legacy_fallback(exe_dir: Path) -> int:
-    legacy = exe_dir / "ezcutie_legacy.exe"
-    if legacy.exists():
-        logging.info("Launching legacy fallback: %s", legacy)
-        subprocess.Popen([str(legacy)], cwd=str(exe_dir), shell=False)
-        return 0
-
+def migration_failed_exit() -> int:
     msg = (
-        "EzFrames migration to v3 failed and no legacy fallback was found.\n\n"
+        "EzFrames migration to v3 failed.\n\n"
+        "Legacy mode is no longer supported.\n"
+        "Please relaunch EzFrames to retry the update, or reinstall from the latest installer.\n\n"
         "Please reinstall EzFrames from the latest installer."
     )
     logging.error(msg)
@@ -401,7 +400,16 @@ def launch_legacy_fallback(exe_dir: Path) -> int:
 
 def migrate_to_v3(exe_dir: Path) -> int:
     progress_ui = MigrationProgressWindow()
-    progress_ui.start()
+    try:
+        progress_ui.start()
+    except Exception as exc:
+        logging.exception("Migration UI startup failed: %s", exc)
+        show_message(
+            "EzFrames Migration Error",
+            "EzFrames could not open the required update window.\n\n"
+            "Please reinstall EzFrames from the latest installer.",
+        )
+        return 2
     progress_ui.set_status("Checking EzFrames installation...", "Looking for installed v3 runtime.")
 
     if find_v3_launcher() is not None:
@@ -481,10 +489,10 @@ def migrate_to_v3(exe_dir: Path) -> int:
         return 0
     except Exception as exc:
         logging.exception("Migration failed: %s", exc)
-        progress_ui.set_status("Migration failed", "Starting legacy fallback...")
+        progress_ui.set_status("Migration failed", "Legacy mode is disabled. Please relaunch to retry update.")
         time.sleep(1.0)
         progress_ui.close()
-        return launch_legacy_fallback(exe_dir)
+        return migration_failed_exit()
 
 
 def main() -> int:

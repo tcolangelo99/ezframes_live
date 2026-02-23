@@ -49,15 +49,24 @@ class ShortcutService:
             return False
 
     @staticmethod
-    def _shortcut_paths() -> list[Path]:
+    def _start_menu_shortcut_paths() -> list[Path]:
         appdata = Path(os.environ.get("APPDATA", "")).expanduser()
-        userprofile = Path(os.environ.get("USERPROFILE", "")).expanduser()
-
         start_menu_group = appdata / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "EzFrames" / "EzFrames.lnk"
         start_menu_flat = appdata / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "EzFrames.lnk"
-        desktop = userprofile / "Desktop" / "EzFrames.lnk"
+        return [start_menu_group, start_menu_flat]
 
-        return [start_menu_group, start_menu_flat, desktop]
+    @staticmethod
+    def _desktop_shortcut_path() -> Path:
+        userprofile = Path(os.environ.get("USERPROFILE", "")).expanduser()
+        return userprofile / "Desktop" / "EzFrames.lnk"
+
+    def _should_manage_desktop_shortcut(self) -> bool:
+        # Respect user choice: only maintain desktop shortcut if it already exists.
+        # This prevents recreating it after a user deletes it.
+        desktop = self._desktop_shortcut_path()
+        if desktop.exists():
+            return True
+        return os.environ.get("EZFRAMES_FORCE_DESKTOP_SHORTCUT", "").strip() == "1"
 
     def _write_shortcut(self, shortcut_path: Path, target_exe: Path) -> None:
         import win32com.client  # type: ignore
@@ -117,7 +126,11 @@ class ShortcutService:
         except Exception as exc:
             log.info("pywin32 COM unavailable, using PowerShell fallback for shortcuts: %s", exc)
 
-        for shortcut in self._shortcut_paths():
+        shortcut_targets = list(self._start_menu_shortcut_paths())
+        if self._should_manage_desktop_shortcut():
+            shortcut_targets.append(self._desktop_shortcut_path())
+
+        for shortcut in shortcut_targets:
             try:
                 if use_pywin32:
                     self._write_shortcut(shortcut, launcher)

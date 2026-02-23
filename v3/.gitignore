@@ -41,11 +41,3 @@ auth_cache.db-*
 *.local
 .vscode/
 .idea/
-
-
-# Generated launcher/installer outputs
-packaging/launcher_stub/bin/
-packaging/launcher_stub/obj/
-packaging/inno/ezframes_v3_bootstrap_installer*.bin
-packaging/inno/ezframes_v3_bootstrap_installer.exe
-

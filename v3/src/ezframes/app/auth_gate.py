@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import logging
+import os
 import sys
 
 from ezframes.common.auth_tokens import validate_launch_ticket_from_env
 from ezframes.common.config import AppPaths
+from ezframes.common.entitlements import FREE, PRO
 
 
 log = logging.getLogger(__name__)
@@ -29,6 +31,8 @@ def enforce_authorized_launch(interactive_error: bool = True, consume_ticket: bo
     paths = AppPaths.default()
     validation = validate_launch_ticket_from_env(paths.state_dir, consume=consume_ticket)
     if validation.valid:
+        status = str(validation.status or "").strip().upper()
+        os.environ["EZFRAMES_ENTITLEMENT"] = PRO if status == "ACTIVE" else FREE
         return 0
 
     reason = validation.reason or "Unauthorized launch."
