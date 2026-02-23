@@ -437,7 +437,8 @@ class EzFramesUI:
         try:
             cutie_python = self._select_cutie_python()
         except Exception as exc:
-            self.root.after(0, lambda: messagebox.showerror("Cutie Failed", str(exc)))
+            msg = str(exc)
+            self.root.after(0, lambda m=msg: messagebox.showerror("Cutie Failed", m))
             return
 
         src_root = Path(__file__).resolve().parents[2]
@@ -621,7 +622,8 @@ class EzFramesUI:
                 self.root.after(0, lambda: self._load_preview_video(out_video))
         except Exception as exc:
             log.exception("Process video failed: %s", exc)
-            self.root.after(0, lambda: messagebox.showerror("Processing Failed", str(exc)))
+            msg = str(exc)
+            self.root.after(0, lambda m=msg: messagebox.showerror("Processing Failed", m))
 
     def _interpolate_thread(self) -> None:
         threading.Thread(target=self._interpolate, daemon=True).start()
@@ -656,7 +658,8 @@ class EzFramesUI:
             self.root.after(0, lambda: self._load_preview_video(output))
         except Exception as exc:
             log.exception("Interpolation failed: %s", exc)
-            self.root.after(0, lambda: messagebox.showerror("Interpolation Failed", str(exc)))
+            msg = str(exc)
+            self.root.after(0, lambda m=msg: messagebox.showerror("Interpolation Failed", m))
 
     def _load_preview_video(self, video_path: str) -> None:
         self._stop_preview()
