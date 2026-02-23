@@ -105,7 +105,7 @@ Manifest signing is required for production releases:
 
 ```powershell
 $env:EZFRAMES_MANIFEST_SIGNING_KEY="<base64-raw-ed25519-private-key>"
-$env:EZFRAMES_MANIFEST_KEY_ID="ezframes-prod-2026-02"
+$env:EZFRAMES_MANIFEST_KEY_ID="ezframes-prod-2026-02-rot1"
 ```
 
 Build installer (Inno Setup compiler `ISCC.exe`):

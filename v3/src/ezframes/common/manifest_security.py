@@ -12,7 +12,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey,
 
 MANIFEST_SCHEMA_VERSION = "1"
 MANIFEST_SIGNATURE_ALG = "ed25519"
-DEFAULT_MANIFEST_KEY_ID = "ezframes-prod-2026-02"
+DEFAULT_MANIFEST_KEY_ID = "ezframes-prod-2026-02-rot1"
 
 # Trusted release hosts for manifest and redirected GitHub release assets.
 TRUSTED_RELEASE_HOSTS: tuple[str, ...] = (
@@ -24,7 +24,7 @@ TRUSTED_RELEASE_HOSTS: tuple[str, ...] = (
 
 # Public verification keys embedded in launcher/app code.
 MANIFEST_PUBLIC_KEYS: dict[str, str] = {
-    DEFAULT_MANIFEST_KEY_ID: "rvYa9/XJrcdy+Za0p7e3Ll8Uf6n6wBztNzZ1V0IICvI=",
+    DEFAULT_MANIFEST_KEY_ID: "dLVH355GFJgzlo7GRC51VJQ0ZMEaoe/LuEKo1i9wvkk=",
 }
 
 _CANONICAL_MANIFEST_FIELDS = (
