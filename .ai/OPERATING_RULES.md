@@ -8,6 +8,7 @@
 - Only mark a task done when acceptance criteria are met.
 - Repository files are canonical memory. Chat context is not canonical.
 - Never store secrets, private keys, credentials, or secret file paths in `.ai/*`.
+- Store sensitive operational notes in local-only `.ai/PRIVATE_NOTES.md` (gitignored), not in tracked files.
 
 ## How To Operate
 

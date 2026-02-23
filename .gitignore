@@ -1,0 +1,49 @@
+# Root-level local artifacts and sensitive files
+
+# Build outputs
+build/
+dist/
+*.spec
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+scripts/__pycache__/
+migration_bridge/__pycache__/
+
+# Local virtual environments
+venv/
+launcherenv/
+cutievenv/
+
+# Local app/runtime-generated folders
+workspace/
+state/
+logs/
+v3/workspace/
+v3/state/
+v3/logs/
+
+# Local packaging/build artifacts
+v3/Cutietop/
+v3/packaging/inno/*.exe
+v3/packaging/inno/*.bin
+v3/packaging/launcher_stub/obj/
+
+# Sensitive material
+*.pem
+*.key
+*.pfx
+*.p12
+manifest_signing_key*
+auth_signing_key.bin
+auth_signing_key.dpapi
+
+# Environment files
+.env
+.env.*
+*.local
+
+# Local-only AI notes (never commit)
+.ai/PRIVATE_NOTES.md

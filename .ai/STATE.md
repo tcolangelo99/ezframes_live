@@ -30,16 +30,22 @@ EzFrames currently runs a v3 runtime architecture from `v3/` (launcher, app, upd
 - v2 to v3 bridge path with progress UI and installer handoff.
 - Launcher auth supports both Pro and Free tier entitlements.
 - Local/runtime security hardening and signed manifest verification are in place.
+- Public `.ai` memory files remain sanitized; sensitive operational data is routed to local-only `.ai/PRIVATE_NOTES.md`.
 
 ## In Progress
 
-- No active in-progress items in this state snapshot.
+- Robustness hardening backlog has been queued in `.ai/TASKS.md` and is ready for implementation sequencing.
+- Immediate priority group:
+  - Harden v2 to v3 bridge integrity verification.
+  - Add CI for launcher/app tests plus release sanity checks.
+  - Add root `.gitignore` and artifact cleanup policy.
 
 ## Known Issues / Tech Debt
 
 - Repo root contains generated build artifacts (`build/`, `dist/`, installer binaries/spec files) that should stay out of committed source changes.
 - Root contributor docs are minimal; primary operational docs currently live in `v3/README_V3.md`.
+- Remaining hardening items are tracked in `.ai/TASKS.md` under `NEXT` and `LATER` (interpreter strictness, disk-space preflight, log rotation, endpoint/channel separation, key rotation, migration matrix automation).
 
 ## Last Updated
 
-- 2026-02-23: Added `.ai` memory system and local/CI enforcement; verified pre-commit block behavior.
+- 2026-02-23: Added root ignore policy and local-only private notes path for sensitive operational details.
