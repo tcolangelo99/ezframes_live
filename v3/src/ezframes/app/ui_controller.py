@@ -319,20 +319,30 @@ class EzFramesUI:
             merged.append(p)
         return os.pathsep.join(merged)
 
+    @staticmethod
+    def _subprocess_flags() -> int:
+        if os.name == "nt":
+            return int(getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        return 0
+
     def _cuda_support(self) -> tuple[bool, bool]:
         cv2_cuda = False
         torch_cuda = False
 
         try:
             cv2_cuda = cv2.cuda.getCudaEnabledDeviceCount() > 0
-        except Exception:
+        except Exception as exc:
+            log.info("OpenCV CUDA probe failed: %s", exc)
             cv2_cuda = False
 
         try:
             import torch
 
             torch_cuda = bool(torch.cuda.is_available())
-        except Exception:
+            if not torch_cuda:
+                log.info("PyTorch CUDA not available. torch=%s cuda=%s", getattr(torch, "__version__", "?"), getattr(torch.version, "cuda", "?"))
+        except Exception as exc:
+            log.warning("PyTorch CUDA probe failed: %s", exc)
             torch_cuda = False
 
         return cv2_cuda, torch_cuda
@@ -340,7 +350,27 @@ class EzFramesUI:
     def _warn_if_no_cuda(self) -> None:
         cv2_cuda, torch_cuda = self._cuda_support()
         if not cv2_cuda and not torch_cuda:
-            messagebox.showwarning("CUDA Not Detected", "CUDA acceleration was not detected. CPU fallback will be used.")
+            nvidia_detail = ""
+            try:
+                info = subprocess.run(
+                    ["nvidia-smi", "--query-gpu=name,driver_version", "--format=csv,noheader"],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=5,
+                    creationflags=self._subprocess_flags(),
+                )
+                if info.returncode == 0 and info.stdout.strip():
+                    nvidia_detail = f"\nDetected GPU: {info.stdout.strip().splitlines()[0]}"
+            except Exception as exc:
+                log.info("nvidia-smi probe failed: %s", exc)
+
+            messagebox.showwarning(
+                "CUDA Not Detected",
+                "CUDA acceleration was not detected in this runtime. CPU fallback will be used.\n"
+                "A runtime dependency repair/update may be required."
+                + nvidia_detail,
+            )
             return
         if torch_cuda and not cv2_cuda:
             self.var_status.set(
@@ -460,7 +490,15 @@ class EzFramesUI:
             status_file,
         ]
         self.root.after(0, lambda vw=str(video_workspace): self.var_status.set(f"Launching Cutie-lite ({vw})..."))
-        rc = subprocess.call(cmd, shell=False, env=env)
+        completed = subprocess.run(
+            cmd,
+            shell=False,
+            env=env,
+            capture_output=True,
+            text=True,
+            creationflags=self._subprocess_flags(),
+        )
+        rc = int(completed.returncode)
         if rc == 0:
             self.root.after(0, lambda: self.var_status.set(f"Cutie-lite complete. Masks: {output_mask_dir}"))
             self.root.after(0, self._sync_mask_state)
@@ -473,6 +511,11 @@ class EzFramesUI:
                     detail = f"{detail}\n\n{err}"
             except Exception:
                 pass
+            stderr_text = (completed.stderr or "").strip()
+            if stderr_text:
+                log.error("Cutie stderr:\n%s", stderr_text)
+                if "No module named" in stderr_text:
+                    detail = f"{detail}\n\n{stderr_text.splitlines()[-1]}"
             self.root.after(0, lambda d=detail: messagebox.showerror("Cutie Failed", d))
 
     def _process_video_thread(self) -> None:
@@ -794,6 +837,19 @@ def main() -> int:
     paths = AppPaths.default()
     paths.ensure_layout()
     configure_logging(paths.logs_dir)
+
+    def _log_uncaught(exc_type, exc_value, exc_tb) -> None:
+        log.exception("Uncaught exception", exc_info=(exc_type, exc_value, exc_tb))
+
+    sys.excepthook = _log_uncaught
+    if hasattr(threading, "excepthook"):
+        def _thread_excepthook(args) -> None:  # type: ignore[no-redef]
+            log.exception(
+                "Unhandled thread exception in %s",
+                getattr(args.thread, "name", "thread"),
+                exc_info=(args.exc_type, args.exc_value, args.exc_traceback),
+            )
+        threading.excepthook = _thread_excepthook  # type: ignore[attr-defined]
 
     root = tk.Tk()
     EzFramesUI(root, paths)

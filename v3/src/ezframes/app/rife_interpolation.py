@@ -62,6 +62,9 @@ class RifeInterpolator:
             pass
 
         search_roots = [*self.paths.source_roots(), self.paths.app_dir]
+        app_src = self.paths.app_dir / "src"
+        if app_src.exists():
+            search_roots.append(app_src)
         for root in search_roots:
             candidate = root / "motion_interpolation.py"
             if candidate.exists():

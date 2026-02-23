@@ -87,9 +87,9 @@ class ProcessService:
         runtime_pythonw = self.paths.runtime_python_dir / "pythonw.exe"
 
         for candidate in (
+            runtime_pythonw,
             runtime_env_py,
             runtime_py,
-            runtime_pythonw,
             self.paths.python_exe,
             Path(sys.executable),
         ):
@@ -142,4 +142,13 @@ class ProcessService:
         if launch_ticket_path is not None:
             env["EZFRAMES_LAUNCH_TICKET"] = str(launch_ticket_path)
         log.info("Launching main app: %s", cmd)
-        return subprocess.Popen(cmd, shell=False, env=env, cwd=str(self.paths.install_root))
+        creationflags = 0
+        if os.name == "nt":
+            creationflags = int(getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        return subprocess.Popen(
+            cmd,
+            shell=False,
+            env=env,
+            cwd=str(self.paths.install_root),
+            creationflags=creationflags,
+        )

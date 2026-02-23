@@ -108,11 +108,13 @@ class FFmpegWriter:
 
     def __enter__(self) -> "FFmpegWriter":
         log.info("Starting ffmpeg: %s", " ".join(self.command))
+        creationflags = int(getattr(subprocess, "CREATE_NO_WINDOW", 0)) if os.name == "nt" else 0
         self.proc = subprocess.Popen(
             self.command,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
+            creationflags=creationflags,
         )
         return self
 
