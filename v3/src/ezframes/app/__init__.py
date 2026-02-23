@@ -1,0 +1,2 @@
+"""EzFrames main app package."""
+

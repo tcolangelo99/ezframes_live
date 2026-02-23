@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling>=1.25.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ezframes"
+version = "3.0.4"
+description = "EzFrames v3 launcher and app runtime (non-PyInstaller)"
+readme = "README_V3.md"
+requires-python = ">=3.11"
+dependencies = [
+  "requests>=2.32.0",
+  "opencv-python>=4.10.0",
+  "numpy>=1.26.0",
+  "pillow>=10.0.0",
+  "scipy>=1.12.0",
+  "tqdm>=4.66.0",
+]
+
+[project.optional-dependencies]
+windows = ["pywin32>=306"]
+cutie = [
+  "omegaconf>=2.3.0",
+  "hydra-core>=1.3.2",
+  "scipy>=1.12.0",
+  "tqdm>=4.66.0",
+]
+
+[project.scripts]
+ezframes-launcher = "ezframes.launcher.cli:main"
+ezframes-app = "ezframes.app.ui_controller:main"
+ezframes-cutie-lite = "ezframes.cutie_lite.engine:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ezframes"]

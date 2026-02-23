@@ -189,21 +189,23 @@ class MigrationProgressWindow:
         self._emit("close")
 
 
-def find_v3_launcher() -> tuple[Path, Path] | None:
+def find_v3_launcher() -> list[str] | None:
     root = _install_root()
+    native_launcher = root / "EzFramesLauncher.exe"
+    if native_launcher.exists():
+        return [str(native_launcher), "--log-level", "INFO"]
+
     pythonw = root / "runtime" / "python" / "pythonw.exe"
     bootstrap = root / "bootstrap_launcher.py"
     if pythonw.exists() and bootstrap.exists():
-        return pythonw, bootstrap
+        return [str(pythonw), str(bootstrap), "--log-level", "INFO"]
     return None
 
 
 def launch_v3(progress_ui: MigrationProgressWindow | None = None) -> bool:
-    found = find_v3_launcher()
-    if not found:
+    cmd = find_v3_launcher()
+    if cmd is None:
         return False
-    pythonw, bootstrap = found
-    cmd = [str(pythonw), str(bootstrap), "--skip-update", "--log-level", "INFO"]
     logging.info("Launching v3 runtime: %s", cmd)
     proc = subprocess.Popen(cmd, cwd=str(_install_root()), shell=False)
 

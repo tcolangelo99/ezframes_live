@@ -1,0 +1,27 @@
+{
+  "schema_version": "1",
+  "app_version": "3.0.0",
+  "min_launcher_version": "3.0.0",
+  "published_at": "2026-02-22T00:00:00Z",
+  "notes_url": "https://github.com/tcolangelo99/ezframes_live/releases/tag/v3.0.0",
+  "assets": [
+    {
+      "name": "runtime-python-win64.zip",
+      "url": "https://github.com/tcolangelo99/ezframes_live/releases/download/v3.0.0/runtime-python-win64.zip",
+      "sha256": "REPLACE_ME",
+      "size": 123
+    },
+    {
+      "name": "app-bundle-v3.0.0.zip",
+      "url": "https://github.com/tcolangelo99/ezframes_live/releases/download/v3.0.0/app-bundle-v3.0.0.zip",
+      "sha256": "REPLACE_ME",
+      "size": 123
+    },
+    {
+      "name": "models-v3.0.0.zip",
+      "url": "https://github.com/tcolangelo99/ezframes_live/releases/download/v3.0.0/models-v3.0.0.zip",
+      "sha256": "REPLACE_ME",
+      "size": 123
+    }
+  ]
+}
