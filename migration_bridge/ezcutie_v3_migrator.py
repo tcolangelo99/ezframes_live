@@ -102,6 +102,23 @@ def _installed_v3_version() -> tuple[int, int, int] | None:
     return _version_tuple(installed)
 
 
+def _is_legacy_v2_source(exe_dir: Path) -> bool:
+    try:
+        root = exe_dir.resolve()
+    except Exception:
+        root = exe_dir
+
+    legacy_markers = (
+        root / "launcher.exe",
+        root / "ezcutie_legacy.exe",
+    )
+    if all(marker.exists() for marker in legacy_markers):
+        return True
+
+    lowered = str(root).lower()
+    return "ezframes_live" in lowered and ("program files" in lowered or "programfiles" in lowered)
+
+
 class MigrationProgressWindow:
     def __init__(self) -> None:
         self._events: queue.Queue[tuple[str, tuple[object, ...]]] = queue.Queue()
@@ -479,9 +496,17 @@ def migrate_to_v3(exe_dir: Path) -> int:
         release_tag = str(release.get("tag_name", "latest"))
         release_ver = _version_tuple(release_tag)
         installed_ver = _installed_v3_version()
+        force_latest_install = _is_legacy_v2_source(exe_dir)
         logging.info("Latest compatible release resolved: %s", release_tag)
+        if force_latest_install:
+            logging.info("Legacy v2 source detected at %s; forcing latest v3 installer apply.", exe_dir)
 
-        if find_v3_launcher() is not None and installed_ver is not None and installed_ver >= release_ver:
+        if (
+            not force_latest_install
+            and find_v3_launcher() is not None
+            and installed_ver is not None
+            and installed_ver >= release_ver
+        ):
             logging.info("Installed v3 runtime is current (%s >= %s); launching.", installed_ver, release_ver)
             progress_ui.set_status("EzFrames is up to date", f"Installed version is current ({release_tag}).")
             if launch_v3(progress_ui=progress_ui):
@@ -496,6 +521,12 @@ def migrate_to_v3(exe_dir: Path) -> int:
             progress_ui.set_status(
                 "Updating installed EzFrames runtime...",
                 f"Installed runtime is older than {release_tag}; applying latest installer.",
+            )
+            time.sleep(0.4)
+        elif force_latest_install:
+            progress_ui.set_status(
+                "Migrating legacy EzFrames install...",
+                f"Applying latest v3 package {release_tag}.",
             )
             time.sleep(0.4)
 

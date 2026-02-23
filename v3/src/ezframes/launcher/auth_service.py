@@ -272,7 +272,7 @@ class AuthService:
         root.title(f"EzFrames Launcher v{EZFRAMES_VERSION}")
         root.attributes("-topmost", True)
         root.resizable(False, False)
-        root.geometry("470x320")
+        root.geometry("500x360")
         root.configure(bg=colors["bg"])
         self._apply_window_icon(root)
 
@@ -484,10 +484,8 @@ class AuthService:
         cancel_btn = make_button(button_row, "Cancel", on_cancel, variant="secondary")
         cancel_btn.pack(side="right")
 
-        continue_free_btn = None
-        if self.cfg.allow_free_tier:
-            continue_free_btn = make_button(button_row, "Continue Free", on_continue_free, variant="secondary")
-            continue_free_btn.pack(side="right", padx=(0, 8))
+        continue_free_btn = make_button(button_row, "Continue Free", on_continue_free, variant="secondary")
+        continue_free_btn.pack(side="right", padx=(0, 8))
         login_btn = make_button(button_row, "Sign In", on_login, variant="primary")
         login_btn.pack(side="right", padx=(0, 8))
 
