@@ -23,3 +23,28 @@ runtime_python/
 logs/
 state/
 
+# Sensitive / local-only auth and signing material
+*.pem
+*.key
+*.pfx
+*.p12
+manifest_signing_key*
+auth_signing_key.bin
+auth_signing_key.dpapi
+used_launch_nonces.v1.json
+auth_cache.db
+auth_cache.db-*
+
+# Local env and editor files
+.env
+.env.*
+*.local
+.vscode/
+.idea/
+
+
+# Generated launcher/installer outputs
+packaging/launcher_stub/bin/
+packaging/launcher_stub/obj/
+packaging/inno/ezframes_v3_bootstrap_installer*.bin
+packaging/inno/ezframes_v3_bootstrap_installer.exe
