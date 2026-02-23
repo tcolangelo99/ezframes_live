@@ -22,6 +22,7 @@ try:
 except Exception:  # pragma: no cover - optional runtime dependency
     ctk = None
 
+from ezframes import __version__ as EZFRAMES_VERSION
 from ezframes.app.auth_gate import enforce_authorized_launch
 from ezframes.app.mask_integration import load_mask, mask_dir_for_video, video_workspace_dir
 from ezframes.app.motion_detection import (
@@ -370,7 +371,7 @@ class EzFramesUI:
         self.root.option_add("*TSpinbox*Foreground", c["text"])
 
     def _build_ui(self) -> None:
-        self.root.title("EzFrames")
+        self.root.title(f"EzFrames v{EZFRAMES_VERSION}")
         self.root.geometry("1280x860")
         self.root.minsize(1120, 760)
         self._configure_style()
@@ -406,6 +407,11 @@ class EzFramesUI:
             textvariable=self.tier_var,
             style="Muted.TLabel",
         ).grid(row=2, column=1, sticky="w", pady=(1, 0))
+        ttk.Label(
+            header,
+            text=f"v{EZFRAMES_VERSION}",
+            style="Muted.TLabel",
+        ).grid(row=0, column=2, sticky="e", padx=(8, 0))
 
         self.var_video = tk.StringVar()
         self.var_output = tk.StringVar(value=str(self.paths.workspace_dir))

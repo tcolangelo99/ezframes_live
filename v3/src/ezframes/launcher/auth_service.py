@@ -12,6 +12,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from ezframes import __version__ as EZFRAMES_VERSION
 from ezframes.common.auth_tokens import (
     issue_launch_ticket,
     sign_cache_record,
@@ -268,7 +269,7 @@ class AuthService:
         accent_font = pick_font(["WWE Raw", "Segoe UI Semibold", "Segoe UI"], fallback=body_font)
 
         root = tk.Tk()
-        root.title("EzFrames Launcher")
+        root.title(f"EzFrames Launcher v{EZFRAMES_VERSION}")
         root.attributes("-topmost", True)
         root.resizable(False, False)
         root.geometry("470x320")
@@ -489,6 +490,15 @@ class AuthService:
             continue_free_btn.pack(side="right", padx=(0, 8))
         login_btn = make_button(button_row, "Sign In", on_login, variant="primary")
         login_btn.pack(side="right", padx=(0, 8))
+
+        tk.Label(
+            frame,
+            text=f"Version {EZFRAMES_VERSION}",
+            bg=colors["panel"],
+            fg=colors["muted"],
+            anchor="e",
+            font=(body_font, 9),
+        ).pack(fill="x", padx=12, pady=(0, 2))
 
         root.bind("<Return>", lambda _e: on_login())
         root.bind("<Escape>", lambda _e: on_cancel())

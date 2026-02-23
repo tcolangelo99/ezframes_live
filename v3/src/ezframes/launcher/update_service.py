@@ -235,7 +235,7 @@ class UpdateService:
         seen_log_lines: set[str] = set()
 
         root = tk.Tk()
-        root.title("EzFrames Updater")
+        root.title(f"EzFrames Updater v{EZFRAMES_VERSION}")
         root.resizable(False, False)
         root.attributes("-topmost", True)
         root.protocol("WM_DELETE_WINDOW", lambda: None)

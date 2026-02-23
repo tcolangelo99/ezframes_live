@@ -19,6 +19,7 @@ from typing import Callable
 
 DEFAULT_REPO = "tcolangelo99/ezframes_live"
 GITHUB_API = "https://api.github.com/repos/{repo}/releases/latest"
+GITHUB_RELEASES_API = "https://api.github.com/repos/{repo}/releases?per_page=30"
 INSTALLER_SUFFIX = "_bootstrap_installer.exe"
 DOWNLOAD_RETRIES = 3
 DOWNLOAD_TIMEOUT_SECONDS = 60
@@ -27,6 +28,7 @@ DOWNLOAD_CHUNK_SIZE = 1024 * 1024
 UI_UPDATE_MIN_INTERVAL_SECONDS = 0.15
 LAUNCH_WAIT_TIMEOUT_SECONDS = 180
 LAUNCH_UI_UPDATE_INTERVAL_SECONDS = 0.5
+_VERSION_RE = re.compile(r"(\d+)\.(\d+)\.(\d+)")
 
 
 def _local_app_data() -> Path:
@@ -74,6 +76,30 @@ def _format_bytes(num_bytes: int) -> str:
         if value < 1024.0:
             return f"{value:.1f} {unit}"
     return f"{value:.1f} PB"
+
+
+def _version_tuple(text: str) -> tuple[int, int, int]:
+    value = str(text or "").strip()
+    if value.lower().startswith("v"):
+        value = value[1:]
+    m = _VERSION_RE.search(value)
+    if not m:
+        return (0, 0, 0)
+    return (int(m.group(1)), int(m.group(2)), int(m.group(3)))
+
+
+def _installed_v3_version() -> tuple[int, int, int] | None:
+    state_path = _install_root() / "state" / "install_state.v1.json"
+    if not state_path.exists():
+        return None
+    try:
+        data = json.loads(state_path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    installed = str(data.get("installed_version", "")).strip()
+    if not installed:
+        return None
+    return _version_tuple(installed)
 
 
 class MigrationProgressWindow:
@@ -251,6 +277,39 @@ def github_latest_release(repo: str) -> dict:
         return json.loads(resp.read().decode("utf-8"))
 
 
+def github_release_feed(repo: str) -> list[dict]:
+    url = GITHUB_RELEASES_API.format(repo=repo)
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "EzFrames-V2-Bridge/1.0",
+            "Accept": "application/vnd.github+json",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT_SECONDS) as resp:
+        payload = json.loads(resp.read().decode("utf-8"))
+    if not isinstance(payload, list):
+        return []
+    return [item for item in payload if isinstance(item, dict)]
+
+
+def select_latest_supported_release(repo: str) -> tuple[dict, dict, list[dict]]:
+    candidates = github_release_feed(repo)
+    stable = [r for r in candidates if not bool(r.get("draft")) and not bool(r.get("prerelease"))]
+    stable.sort(key=lambda r: _version_tuple(str(r.get("tag_name", ""))), reverse=True)
+
+    for release in stable:
+        try:
+            installer, bins = select_installer_and_bins(release)
+            return release, installer, bins
+        except Exception:
+            continue
+
+    release = github_latest_release(repo)
+    installer, bins = select_installer_and_bins(release)
+    return release, installer, bins
+
+
 def select_installer_and_bins(release: dict) -> tuple[dict, list[dict]]:
     assets = release.get("assets", [])
     if not isinstance(assets, list):
@@ -334,6 +393,7 @@ def run_installer(installer_path: Path, progress_ui: MigrationProgressWindow | N
         "/SUPPRESSMSGBOXES",
         "/NORESTART",
         "/SP-",
+        "/TASKS=desktopicon",
     ]
     logging.info("Running installer: %s", cmd)
     proc = subprocess.Popen(cmd, cwd=str(installer_path.parent), shell=False)
@@ -367,7 +427,7 @@ def run_installer(installer_path: Path, progress_ui: MigrationProgressWindow | N
 
 
 def wait_for_v3_install(
-    timeout_seconds: int = 45,
+    timeout_seconds: int = 180,
     progress_ui: MigrationProgressWindow | None = None,
 ) -> bool:
     end = time.time() + timeout_seconds
@@ -410,27 +470,35 @@ def migrate_to_v3(exe_dir: Path) -> int:
             "Please reinstall EzFrames from the latest installer.",
         )
         return 2
-    progress_ui.set_status("Checking EzFrames installation...", "Looking for installed v3 runtime.")
-
-    if find_v3_launcher() is not None:
-        logging.info("Existing v3 runtime detected; launching without reinstall.")
-        if launch_v3(progress_ui=progress_ui):
-            progress_ui.set_progress("EzFrames is ready", 100.0, "Opening main app...")
-            time.sleep(0.8)
-            progress_ui.close()
-            return 0
-        logging.warning("Existing v3 runtime failed to launch; attempting repair install.")
-        progress_ui.set_status("Installed runtime failed to launch", "Repairing installation from latest release.")
-        time.sleep(0.8)
-
     repo = os.environ.get("EZFRAMES_MIGRATION_REPO", DEFAULT_REPO).strip() or DEFAULT_REPO
     logging.info("Starting v2->v3 migration using repo: %s", repo)
     progress_ui.set_status("Checking for EzFrames v3 update...", "Contacting GitHub Releases.")
 
     try:
-        release = github_latest_release(repo)
-        installer_asset, bin_assets = select_installer_and_bins(release)
+        release, installer_asset, bin_assets = select_latest_supported_release(repo)
         release_tag = str(release.get("tag_name", "latest"))
+        release_ver = _version_tuple(release_tag)
+        installed_ver = _installed_v3_version()
+        logging.info("Latest compatible release resolved: %s", release_tag)
+
+        if find_v3_launcher() is not None and installed_ver is not None and installed_ver >= release_ver:
+            logging.info("Installed v3 runtime is current (%s >= %s); launching.", installed_ver, release_ver)
+            progress_ui.set_status("EzFrames is up to date", f"Installed version is current ({release_tag}).")
+            if launch_v3(progress_ui=progress_ui):
+                progress_ui.set_progress("EzFrames is ready", 100.0, "Opening main app...")
+                time.sleep(0.8)
+                progress_ui.close()
+                return 0
+            logging.warning("Existing up-to-date runtime failed to launch; attempting repair install.")
+            progress_ui.set_status("Installed runtime failed to launch", "Running repair install.")
+            time.sleep(0.8)
+        elif find_v3_launcher() is not None:
+            progress_ui.set_status(
+                "Updating installed EzFrames runtime...",
+                f"Installed runtime is older than {release_tag}; applying latest installer.",
+            )
+            time.sleep(0.4)
+
         tmp_dir = Path(tempfile.gettempdir()) / "EzFramesV3Migration" / release_tag
         tmp_dir.mkdir(parents=True, exist_ok=True)
 
@@ -471,16 +539,24 @@ def migrate_to_v3(exe_dir: Path) -> int:
 
         installer_path = tmp_dir / str(installer_asset.get("name"))
 
-        progress_ui.set_status("Installing EzFrames v3...", "Applying downloaded update package.")
+        progress_ui.set_status("Installing EzFrames v3...", f"Applying update package {release_tag}.")
         code = run_installer(installer_path, progress_ui=progress_ui)
         if code not in (0, 1641, 3010):
             raise RuntimeError(f"Installer returned unexpected exit code: {code}")
         progress_ui.set_status("Finalizing installation...", "Verifying runtime files.")
         progress_ui.set_mode("indeterminate")
-        if not wait_for_v3_install(progress_ui=progress_ui):
-            raise RuntimeError("v3 install did not materialize expected runtime files.")
+        ready = wait_for_v3_install(progress_ui=progress_ui)
+        if not ready:
+            logging.warning("Runtime files were not detected before timeout; attempting launch anyway.")
+            progress_ui.set_status("Finalizing installation...", "Runtime verification delayed, attempting launch.")
         progress_ui.set_status("Launching EzFrames v3...", "Starting launcher with installed runtime.")
         if not launch_v3(progress_ui=progress_ui):
+            if not ready and wait_for_v3_install(timeout_seconds=60, progress_ui=progress_ui):
+                progress_ui.set_status("Launching EzFrames v3...", "Retrying launcher start after delayed install.")
+                if launch_v3(progress_ui=progress_ui):
+                    ready = True
+            if not ready:
+                raise RuntimeError("v3 install did not materialize expected runtime files.")
             raise RuntimeError("v3 runtime files found but launch failed.")
         logging.info("Migration complete, v3 launched.")
         progress_ui.set_progress("Migration complete", 100.0, "Launching EzFrames...")
