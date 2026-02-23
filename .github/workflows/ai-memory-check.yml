@@ -1,0 +1,92 @@
+name: AI Memory Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - master
+      - main
+      - v3-runtime
+
+jobs:
+  ai-memory-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Collect changed files for pull request
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          CHANGED_FILES_PATH: ${{ github.workspace }}/.changed_files.txt
+        with:
+          script: |
+            const fs = require("fs");
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = context.payload.pull_request.number;
+            const per_page = 100;
+            let page = 1;
+            const files = [];
+
+            while (true) {
+              const response = await github.rest.pulls.listFiles({
+                owner,
+                repo,
+                pull_number,
+                per_page,
+                page,
+              });
+              const pageFiles = response.data.map((f) => f.filename);
+              if (pageFiles.length === 0) {
+                break;
+              }
+              files.push(...pageFiles);
+              page += 1;
+            }
+
+            fs.writeFileSync(process.env.CHANGED_FILES_PATH, `${files.join("\n")}\n`, "utf8");
+            core.info(`Collected ${files.length} changed files from PR.`);
+
+      - name: Collect changed files for push
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="${GITHUB_WORKSPACE}/.changed_files.txt"
+          BEFORE="${{ github.event.before }}"
+          SHA="${{ github.sha }}"
+          DEFAULT_BRANCH="${{ github.event.repository.default_branch }}"
+
+          if [[ -z "${BEFORE}" || "${BEFORE}" == "0000000000000000000000000000000000000000" ]]; then
+            git fetch origin "${DEFAULT_BRANCH}" --depth=1 || true
+            if git show-ref --verify --quiet "refs/remotes/origin/${DEFAULT_BRANCH}"; then
+              BASE="$(git merge-base "origin/${DEFAULT_BRANCH}" "${SHA}" || true)"
+            else
+              BASE=""
+            fi
+
+            if [[ -n "${BASE}" ]]; then
+              git diff --name-only "${BASE}" "${SHA}" > "${OUT}"
+            else
+              git ls-files > "${OUT}"
+            fi
+          else
+            git diff --name-only "${BEFORE}" "${SHA}" > "${OUT}"
+          fi
+
+          echo "Changed files used for AI memory check:"
+          cat "${OUT}"
+
+      - name: Enforce AI memory updates
+        run: python scripts/check_ai_memory_ci.py --changed-files .changed_files.txt

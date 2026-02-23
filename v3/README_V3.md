@@ -1,5 +1,7 @@
 # EzFrames v3 Runtime
 
+AI workflow note: AI agents must follow `AGENTS.md` and update `.ai/STATE.md` + `.ai/TASKS.md` after meaningful changes.
+
 This is the v3 migration scaffold for EzFrames:
 
 - No PyInstaller runtime freezing.
