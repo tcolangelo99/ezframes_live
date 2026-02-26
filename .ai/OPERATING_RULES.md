@@ -13,14 +13,20 @@
 ## How To Operate
 
 1. Read `AGENTS.md`, then this file, then `.ai/STATE.md` and `.ai/TASKS.md`.
-2. Execute work.
-3. Run checks relevant to the change.
-4. Update `.ai/STATE.md` and `.ai/TASKS.md` before commit.
+2. Read `.ai/PATH_MAP.md` for canonical labels and path intent before planning.
+3. Follow `.ai/WORKSPACE_GOVERNANCE.md` for canonical vs staging path rules.
+4. Execute work.
+5. Run checks relevant to the change.
+6. Update `.ai/STATE.md` and `.ai/TASKS.md` before commit.
 
 ## Local Checks
 
 - Tests:
   - PowerShell: `$env:PYTHONPATH='v3/src'; py -3.11 -m unittest discover -s v3/tests`
+- Staging mirror drift check:
+  - PowerShell: `py -3.11 scripts/sync_staging.py --mode verify`
+- Workspace entropy audit (pre-release/handoff):
+  - PowerShell: `py -3.11 scripts/audit_workspace_entropy.py --verify-staging`
 - AI memory pre-commit hook:
   - Install once: `py -3.11 -m pip install pre-commit`
   - Install hooks once per clone: `py -3.11 -m pre_commit install`

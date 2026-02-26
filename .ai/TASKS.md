@@ -17,6 +17,39 @@
     - GitHub Actions enforces the same rule for PR/push.
   - Owner: Codex
 
+- [DONE] Refresh handoff docs and clarify canonical vs staging paths
+  - Goal: Ensure next agent can unambiguously identify source-of-truth repo and staging copies.
+  - Acceptance Criteria:
+    - `.ai/HANDOFF.md` includes explicit relationship between `EZFRAMES_PROD\ezframes`, `...\ezframes\v3`, and `ezframes2.0\master`.
+    - `.ai/STATE.md` states that `ezframes2.0\master` is staging-only and may drift.
+    - Root docs include handoff pointer.
+  - Owner: Codex
+
+- [DONE] Add workspace drift governance and staging sync controls
+  - Goal: Reduce documentation/source entropy across canonical and staging paths by enforcing a one-way mirror flow.
+  - Acceptance Criteria:
+    - Canonical governance doc exists with path ownership + sync commands.
+    - Staging docs (`ezframes2.0\master`) are pointer stubs to canonical docs.
+    - `scripts/sync_staging.py` supports `verify` and `sync --prune` for canonical `v3` -> staging `master`.
+    - Initial verify shows clean mirror after sync (`missing=0`, `mismatched=0`, `extras=0`).
+  - Owner: Codex
+
+- [DONE] Harden AGENTS memory protocol and mirror closure requirements
+  - Goal: Force agents to update canonical memory docs after changes and require explicit staging mirror closure for managed v3 work.
+  - Acceptance Criteria:
+    - Canonical `AGENTS.md` defines mandatory pre-read order for `.ai` memory/governance files.
+    - Canonical `AGENTS.md` requires post-change updates to `.ai/STATE.md`, `.ai/TASKS.md`, and concise handoff note updates.
+    - Canonical and staging/global AGENTS text requires `sync_staging.py --mode sync --prune` and `--mode verify` for managed v3 changes.
+  - Owner: Codex
+
+- [DONE] Add canonical path map and require agent consultation
+  - Goal: Eliminate path ambiguity by defining explicit workspace labels and forcing agents to consult mapping before work.
+  - Acceptance Criteria:
+    - `.ai/PATH_MAP.md` exists and maps `ezframes1.0_dev`, `ezframes2.0_dev`, `ezframes3.0_dev`, and `ezframes_prod` to actual paths.
+    - AGENTS instructions (canonical + workspace wrappers) explicitly require consulting path map.
+    - Operating/handoff docs include path map in startup read order.
+  - Owner: Codex
+
 - [TODO] Harden v2 to v3 bridge integrity verification
   - Goal: Require signed-manifest and SHA256 verification in the v2 migrator before executing installer assets.
   - Acceptance Criteria:
@@ -33,6 +66,22 @@
     - Failing checks block merge.
   - Owner: EzFrames Team
 
+- [DONE] Add pre-release staging mirror verification gate
+  - Goal: Prevent shipping from stale staging copies by requiring an explicit canonical-to-staging verification step.
+  - Acceptance Criteria:
+    - Release checklist includes `py -3.11 scripts/sync_staging.py --mode verify`.
+    - Any mismatch blocks release packaging until canonical sync is applied.
+    - Verification result location is documented for handoff/review.
+  - Owner: EzFrames Team
+
+- [DONE] Complete non-destructive folder entropy controls
+  - Goal: Reduce accidental edits across duplicate workspace roots without risky folder moves/deletes.
+  - Acceptance Criteria:
+    - `G:\AFTER EFFECTS\ezframes` has frozen-duplicate marker policy docs.
+    - `G:\AFTER EFFECTS\ezframes2.0\master` has explicit staging-mirror marker docs.
+    - `scripts/audit_workspace_entropy.py --verify-staging` passes and reports healthy layout.
+  - Owner: Codex
+
 - [IN PROGRESS] Add root `.gitignore` and cleanup artifact tracking
   - Goal: Keep generated artifacts out of source control and reduce accidental noise in commits.
   - Acceptance Criteria:
@@ -40,6 +89,21 @@
     - Local-only `.ai/PRIVATE_NOTES.md` is gitignored for sensitive operational notes.
     - Existing transient directories are cleaned from tracked state.
     - Build artifact policy is documented in repo docs.
+  - Owner: EzFrames Team
+
+- [TODO] Fix manifest unit tests for trusted-host validation
+  - Goal: Align `tests/test_manifest.py` fixtures with current trusted update host restrictions.
+  - Acceptance Criteria:
+    - `py -3.11 -m unittest discover -s v3/tests` passes manifest tests.
+    - Tests assert host-validation behavior explicitly (allowed + blocked hosts).
+  - Owner: EzFrames Team
+
+- [TODO] Run post-restore release smoke validation
+  - Goal: Confirm rebuild environment can execute check-only launch and release scripts end-to-end after machine restore.
+  - Acceptance Criteria:
+    - Launcher check-only succeeds from source on clean shell.
+    - Release script dry-run checklist executed and results recorded in `.ai/HANDOFF.md`.
+    - Any missing prereq/tooling is captured with remediation commands.
   - Owner: EzFrames Team
 
 ## NEXT
@@ -87,3 +151,11 @@
     - Automated checks cover fresh install, v3 to latest, v2 bridge to latest, and non-CUDA startup.
     - Results are visible in CI/release gates.
   - Owner: EzFrames Team
+
+## Handoff Execution Order
+
+1. Resolve manifest test failures (`NOW` item: trusted-host fixtures).
+2. Finish artifact hygiene (`NOW` item: root ignore cleanup).
+3. Add CI test/smoke gates (`NOW` item: launcher/app/release checks).
+4. Execute post-restore smoke validation and document output.
+5. Continue into `NEXT` hardening items.

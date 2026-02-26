@@ -1,6 +1,8 @@
 # EzFrames v3 Runtime
 
 AI workflow note: AI agents must follow `AGENTS.md` and update `.ai/STATE.md` + `.ai/TASKS.md` after meaningful changes.
+Agent handoff note: see `../.ai/HANDOFF.md` for current status and immediate execution order.
+Staging mirror note: keep `G:\AFTER EFFECTS\ezframes2.0\master` synchronized via `py -3.11 ..\scripts\sync_staging.py --mode sync --prune` (author changes in canonical repo only).
 
 This is the v3 migration scaffold for EzFrames:
 
@@ -26,16 +28,17 @@ See also:
 ## Local Dev
 
 ```powershell
-cd master
-..\venv\Scripts\python.exe -m pip install -e .
-set PYTHONPATH=src
-..\venv\Scripts\python.exe -m ezframes.launcher --check-only
+cd v3
+py -3.11 -m pip install -e .
+$env:PYTHONPATH='src'
+py -3.11 -m ezframes.launcher --check-only
 ```
 
 Direct launcher entrypoint (developer/internal):
 
 ```powershell
-pythonw -m ezframes.launcher
+$env:PYTHONPATH='src'
+py -3.11 -m ezframes.launcher
 ```
 
 ## Notes
@@ -85,7 +88,7 @@ Operational flags:
 ## Production Build (No PyInstaller)
 
 ```powershell
-cd master
+cd v3
 
 # Prepare runtime/python folder from local CPython install
 powershell .\scripts\release\prepare_runtime_python.ps1 -PyVersion 3.11
