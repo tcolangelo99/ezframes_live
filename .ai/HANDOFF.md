@@ -21,6 +21,7 @@
 - Workspace entropy audit control now exists (`scripts/audit_workspace_entropy.py`).
 - AGENTS memory protocol is now explicit about required `.ai` read order and post-change doc updates, plus staging mirror `sync` + `verify` closure.
 - RIFE interpolation ffmpeg resolution was fixed in `v3/src/motion_interpolation.py` to prioritize shared runtime/app lookup (`resolve_ffmpeg`) so bundled assets work on clean machines.
+- `v3.0.12` release is published (app-bundle hotfix + signed manifest) to roll out the interpolation ffmpeg fix to updater clients.
 
 ## Path Relationships (Important)
 

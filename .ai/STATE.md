@@ -35,6 +35,7 @@ EzFrames runs from the v3 runtime architecture under `v3/` (launcher, app, updat
 - v2 to v3 bridge path with progress UI and installer handoff.
 - Launcher auth supports both Pro and Free tier entitlements.
 - RIFE interpolation now resolves ffmpeg through the shared runtime/app resolver and falls back across install/source roots, so clean-machine installs can use bundled `assets\ffmpeg\bin\ffmpeg.exe` without a system ffmpeg install.
+- Release `v3.0.12` (app-bundle hotfix) is published to GitHub Releases with signed `manifest.v1.json`, making the interpolation ffmpeg resolution fix available to updater clients.
 - Local/runtime security hardening and signed manifest verification are in place.
 - Public `.ai` memory files remain sanitized; sensitive operational data is routed to local-only `.ai/PRIVATE_NOTES.md`.
 - Critical restore state is available (AWS CLI, GitHub CLI auth file, manifest private key file path, local EzFrames runtime data).
@@ -66,6 +67,7 @@ EzFrames runs from the v3 runtime architecture under `v3/` (launcher, app, updat
 
 ## Last Updated
 
+- 2026-02-28: Published `v3.0.12` signed hotfix release (app-bundle + manifest) for client rollout; latest manifest now advertises `app_version` `3.0.12`.
 - 2026-02-28: Fixed interpolation ffmpeg discovery in `v3/src/motion_interpolation.py` to use shared `resolve_ffmpeg(AppPaths.default())` plus broader root fallbacks; staging mirror sync+verify passed (`missing=0`, `mismatched=0`, `extras=0`).
 - 2026-02-25: Refreshed run/test status, documented current test failures, and added handoff-ready state for next agent.
 - 2026-02-25: Added workspace governance + staging sync tooling and reconciled staging code/config drift to canonical `v3`.

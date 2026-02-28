@@ -58,6 +58,14 @@
     - Managed v3 staging mirror closure commands pass after change (`sync --prune`, `verify`).
   - Owner: Codex
 
+- [DONE] Roll out interpolation ffmpeg hotfix to updater clients
+  - Goal: Publish a signed release carrying the interpolation ffmpeg path fix so clients receive it through the manifest updater.
+  - Acceptance Criteria:
+    - `v3.0.12` GitHub release exists with `app-bundle-v3.0.12.zip` and `manifest.v1.json`.
+    - `releases/latest/download/manifest.v1.json` advertises `app_version` `3.0.12`.
+    - Release notes mention the `ffmpeg not found` interpolation fix context.
+  - Owner: Codex
+
 - [TODO] Harden v2 to v3 bridge integrity verification
   - Goal: Require signed-manifest and SHA256 verification in the v2 migrator before executing installer assets.
   - Acceptance Criteria:
