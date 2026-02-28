@@ -135,13 +135,44 @@ class MotionInterpolator:
         if ffmpeg_path and Path(ffmpeg_path).exists():
             return ffmpeg_path
 
+        # Prefer the shared app resolver so interpolation follows the same
+        # install/runtime ffmpeg lookup rules as normal processing.
+        try:
+            from ezframes.app.video_io import resolve_ffmpeg
+            from ezframes.common.config import AppPaths
+
+            return resolve_ffmpeg(AppPaths.default())
+        except Exception:
+            pass
+
         base = Path(__file__).resolve().parent
-        candidates = [
-            base / "ffmpeg" / "bin" / "ffmpeg.exe",
-            base / "ffmpeg" / "bin" / "ffmpeg",
-            base / "assets" / "ffmpeg" / "bin" / "ffmpeg.exe",
-            base / "assets" / "ffmpeg" / "bin" / "ffmpeg",
-        ]
+        roots: list[Path] = [base, Path.cwd()]
+        for env_name in ("EZFRAMES_SOURCE_ROOT", "EZFRAMES_INSTALL_ROOT"):
+            env_root = os.environ.get(env_name, "").strip()
+            if env_root:
+                roots.append(Path(env_root))
+        roots.extend(base.parents)
+
+        dedup_roots: list[Path] = []
+        seen_roots: set[str] = set()
+        for root in roots:
+            key = os.path.normcase(os.path.normpath(str(root)))
+            if key in seen_roots:
+                continue
+            seen_roots.add(key)
+            dedup_roots.append(root)
+
+        candidates: list[Path] = []
+        for root in dedup_roots:
+            candidates.extend(
+                [
+                    root / "ffmpeg" / "bin" / "ffmpeg.exe",
+                    root / "ffmpeg" / "bin" / "ffmpeg",
+                    root / "assets" / "ffmpeg" / "bin" / "ffmpeg.exe",
+                    root / "assets" / "ffmpeg" / "bin" / "ffmpeg",
+                ]
+            )
+
         for candidate in candidates:
             if candidate.exists():
                 return str(candidate)

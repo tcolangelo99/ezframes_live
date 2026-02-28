@@ -50,6 +50,14 @@
     - Operating/handoff docs include path map in startup read order.
   - Owner: Codex
 
+- [DONE] Fix interpolation ffmpeg discovery for clean-machine installs
+  - Goal: Ensure "Interpolate Last Output" works without requiring a system ffmpeg install.
+  - Acceptance Criteria:
+    - `v3/src/motion_interpolation.py` resolves ffmpeg via shared runtime/app path logic first.
+    - Fallback lookup includes install/source roots (`EZFRAMES_SOURCE_ROOT`, `EZFRAMES_INSTALL_ROOT`, module ancestors, cwd).
+    - Managed v3 staging mirror closure commands pass after change (`sync --prune`, `verify`).
+  - Owner: Codex
+
 - [TODO] Harden v2 to v3 bridge integrity verification
   - Goal: Require signed-manifest and SHA256 verification in the v2 migrator before executing installer assets.
   - Acceptance Criteria:

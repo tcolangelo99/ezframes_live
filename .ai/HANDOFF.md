@@ -10,7 +10,7 @@
 6. `.ai/WORKSPACE_GOVERNANCE.md`
 7. `v3/README_V3.md`
 
-## Current Snapshot (2026-02-25)
+## Current Snapshot (2026-02-28)
 
 - Canonical repo: `G:\AFTER EFFECTS\EZFRAMES_PROD\ezframes`
 - Active runtime: `v3/`
@@ -20,6 +20,7 @@
 - Workspace governance + drift controls now exist (`.ai/WORKSPACE_GOVERNANCE.md`, `scripts/sync_staging.py`).
 - Workspace entropy audit control now exists (`scripts/audit_workspace_entropy.py`).
 - AGENTS memory protocol is now explicit about required `.ai` read order and post-change doc updates, plus staging mirror `sync` + `verify` closure.
+- RIFE interpolation ffmpeg resolution was fixed in `v3/src/motion_interpolation.py` to prioritize shared runtime/app lookup (`resolve_ffmpeg`) so bundled assets work on clean machines.
 
 ## Path Relationships (Important)
 
@@ -42,12 +43,12 @@
   - `py -3.11 scripts/sync_staging.py --mode verify`
 - Apply canonical -> staging sync (with managed-file prune):
   - `py -3.11 scripts/sync_staging.py --mode sync --prune`
-- Last known result (2026-02-25):
-  - Verify before sync: `missing=1`, `mismatched=10`
-  - Sync result: `copied=11`, then verify clean (`missing=0`, `mismatched=0`, `extras=0`)
+- Last known result (2026-02-28):
+  - Sync result: `copied=1`, then verify clean (`missing=0`, `mismatched=0`, `extras=0`)
+  - Standalone verify result: clean (`missing=0`, `mismatched=0`, `extras=0`)
 - Workspace entropy audit:
   - `py -3.11 scripts/audit_workspace_entropy.py --verify-staging`
-  - Last result (2026-02-25): `AUDIT PASSED`
+  - Last result (2026-02-28): `AUDIT PASSED`
 
 ## Verified Commands
 
